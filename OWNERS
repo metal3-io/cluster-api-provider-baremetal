@@ -3,8 +3,10 @@ approvers:
   - russellb
   - dhellmann
   - mhrivnak
+  - hardys
 # review == this code is good /lgtm
 reviewers:
   - russellb
   - dhellmann
   - mhrivnak
+  - hardys
