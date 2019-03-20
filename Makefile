@@ -7,6 +7,7 @@ build:
 	@mkdir -p bin
 	go build -o bin/machine-controller-manager ./cmd/manager
 	go build -o bin/manager ./vendor/sigs.k8s.io/cluster-api/cmd/manager
+	go build -o bin/clusterctl ./cmd/clusterctl
 
 all: test manager
 
