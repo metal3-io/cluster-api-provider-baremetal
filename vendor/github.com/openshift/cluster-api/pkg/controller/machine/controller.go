@@ -19,15 +19,22 @@ package machine
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+	"time"
 
+	"github.com/go-log/log/info"
 	machinev1 "github.com/openshift/cluster-api/pkg/apis/machine/v1beta1"
 	controllerError "github.com/openshift/cluster-api/pkg/controller/error"
 	"github.com/openshift/cluster-api/pkg/util"
+	kubedrain "github.com/openshift/kubernetes-drain"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -37,7 +44,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const NodeNameEnvVar = "NODE_NAME"
+const (
+	NodeNameEnvVar = "NODE_NAME"
+
+	// ExcludeNodeDrainingAnnotation annotation explicitly skips node draining if set
+	ExcludeNodeDrainingAnnotation = "machine.openshift.io/exclude-node-draining"
+)
 
 var DefaultActuator Actuator
 
@@ -48,10 +60,12 @@ func AddWithActuator(mgr manager.Manager, actuator Actuator) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager, actuator Actuator) reconcile.Reconciler {
 	r := &ReconcileMachine{
-		Client:   mgr.GetClient(),
-		scheme:   mgr.GetScheme(),
-		nodeName: os.Getenv(NodeNameEnvVar),
-		actuator: actuator,
+		Client:        mgr.GetClient(),
+		eventRecorder: mgr.GetRecorder("machine-controller"),
+		config:        mgr.GetConfig(),
+		scheme:        mgr.GetScheme(),
+		nodeName:      os.Getenv(NodeNameEnvVar),
+		actuator:      actuator,
 	}
 
 	if r.nodeName == "" {
@@ -83,7 +97,10 @@ var _ reconcile.Reconciler = &ReconcileMachine{}
 // ReconcileMachine reconciles a Machine object
 type ReconcileMachine struct {
 	client.Client
+	config *rest.Config
 	scheme *runtime.Scheme
+
+	eventRecorder record.EventRecorder
 
 	actuator Actuator
 
@@ -145,6 +162,18 @@ func (r *ReconcileMachine) Reconcile(request reconcile.Request) (reconcile.Resul
 			return reconcile.Result{}, nil
 		}
 		klog.Infof("reconciling machine object %v triggers delete.", name)
+
+		// Drain node before deletion
+		// If a machine is not linked to a node, just delete the machine. Since a node
+		// can be unlinked from a machine when the node goes NotReady and is removed
+		// by cloud controller manager. In that case some machines would never get
+		// deleted without a manual intervention.
+		if _, exists := m.ObjectMeta.Annotations[ExcludeNodeDrainingAnnotation]; !exists && m.Status.NodeRef != nil {
+			if err := r.drainNode(m); err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+
 		if err := r.actuator.Delete(ctx, cluster, m); err != nil {
 			klog.Errorf("Error deleting machine object %v; %v", name, err)
 			if requeueErr, ok := err.(*controllerError.RequeueAfterError); ok {
@@ -152,6 +181,14 @@ func (r *ReconcileMachine) Reconcile(request reconcile.Request) (reconcile.Resul
 				return reconcile.Result{Requeue: true, RequeueAfter: requeueErr.RequeueAfter}, nil
 			}
 			return reconcile.Result{}, err
+		}
+
+		if m.Status.NodeRef != nil {
+			klog.Infof("Deleting node %q for machine %q", m.Status.NodeRef.Name, m.Name)
+			if err := r.deleteNode(ctx, m.Status.NodeRef.Name); err != nil {
+				klog.Errorf("Error deleting node %q for machine %q", name, err)
+				return reconcile.Result{}, err
+			}
 		}
 
 		// Remove finalizer on successful deletion.
@@ -191,6 +228,41 @@ func (r *ReconcileMachine) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileMachine) drainNode(machine *machinev1.Machine) error {
+	kubeClient, err := kubernetes.NewForConfig(r.config)
+	if err != nil {
+		return fmt.Errorf("unable to build kube client: %v", err)
+	}
+	node, err := kubeClient.CoreV1().Nodes().Get(machine.Status.NodeRef.Name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("unable to get node %q: %v", machine.Status.NodeRef.Name, err)
+	}
+
+	if err := kubedrain.Drain(
+		kubeClient,
+		[]*corev1.Node{node},
+		&kubedrain.DrainOptions{
+			Force:              true,
+			IgnoreDaemonsets:   true,
+			DeleteLocalData:    true,
+			GracePeriodSeconds: -1,
+			Logger:             info.New(klog.V(0)),
+			// If a pod is not evicted in 20 second, retry the eviction next time the
+			// machine gets reconciled again (to allow other machines to be reconciled)
+			Timeout: 20 * time.Second,
+		},
+	); err != nil {
+		// Machine still tries to terminate after drain failure
+		klog.Warningf("drain failed for machine %q: %v", machine.Name, err)
+		return &controllerError.RequeueAfterError{RequeueAfter: 20 * time.Second}
+	}
+
+	klog.Infof("drain successful for machine %q", machine.Name)
+	r.eventRecorder.Eventf(machine, corev1.EventTypeNormal, "Deleted", "Node %q drained", node.Name)
+
+	return nil
 }
 
 func (r *ReconcileMachine) getCluster(ctx context.Context, machine *machinev1.Machine) (*machinev1.Cluster, error) {
@@ -237,4 +309,17 @@ func (r *ReconcileMachine) isDeleteAllowed(machine *machinev1.Machine) bool {
 	// delete the machine this machine-controller is running on. Return false to not allow machine controller to delete its
 	// own machine.
 	return node.UID != machine.Status.NodeRef.UID
+}
+
+func (r *ReconcileMachine) deleteNode(ctx context.Context, name string) error {
+	var node corev1.Node
+	if err := r.Client.Get(ctx, client.ObjectKey{Name: name}, &node); err != nil {
+		if apierrors.IsNotFound(err) {
+			klog.V(2).Infof("Node %q not found", name)
+			return nil
+		}
+		klog.Errorf("Failed to get node %q: %v", name, err)
+		return err
+	}
+	return r.Client.Delete(ctx, &node)
 }

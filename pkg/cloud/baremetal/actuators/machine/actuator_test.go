@@ -126,6 +126,14 @@ func TestChooseHost(t *testing.T) {
 		if result.Name != tc.ExpectedHostName {
 			t.Errorf("host %s chosen instead of %s", result.Name, tc.ExpectedHostName)
 		}
+		savedHost := bmh.BareMetalHost{}
+		err = c.Get(context.TODO(), client.ObjectKey{Name: result.Name, Namespace: result.Namespace}, &savedHost)
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+		if savedHost.Spec.MachineRef == nil {
+			t.Errorf("machine ref %v not saved to host", result.Spec.MachineRef)
+		}
 	}
 }
 
@@ -152,7 +160,7 @@ func TestExists(t *testing.T) {
 			Machine: machinev1.Machine{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						HostAnnotation: "somehost",
+						HostAnnotation: "myns/somehost",
 					},
 				},
 			},
@@ -164,7 +172,7 @@ func TestExists(t *testing.T) {
 			Machine: machinev1.Machine{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						HostAnnotation: "myns",
+						HostAnnotation: "myns/wrong",
 					},
 				},
 			},
@@ -219,7 +227,7 @@ func TestGetHost(t *testing.T) {
 			Machine: machinev1.Machine{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						HostAnnotation: "myhost",
+						HostAnnotation: "myns/myhost",
 					},
 				},
 			},
@@ -231,7 +239,7 @@ func TestGetHost(t *testing.T) {
 			Machine: machinev1.Machine{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						HostAnnotation: "myns",
+						HostAnnotation: "myns/wrong",
 					},
 				},
 			},
@@ -277,7 +285,7 @@ func TestEnsureAnnotation(t *testing.T) {
 			Machine: machinev1.Machine{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						HostAnnotation: "myhost",
+						HostAnnotation: "myns/myhost",
 					},
 				},
 			},
@@ -293,7 +301,7 @@ func TestEnsureAnnotation(t *testing.T) {
 			Machine: machinev1.Machine{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						HostAnnotation: "wrongvalue",
+						HostAnnotation: "myns/wrongvalue",
 					},
 				},
 			},
@@ -359,8 +367,8 @@ func TestEnsureAnnotation(t *testing.T) {
 		if !ok {
 			t.Error("host annotation not found")
 		}
-		if result != tc.Host.Name {
-			t.Errorf("host annotation has value %s, expected %s", result, tc.Host.Name)
+		if result != "myns/myhost" {
+			t.Errorf("host annotation has value %s, expected \"myns/myhost\"", result)
 		}
 	}
 }
@@ -393,7 +401,7 @@ func TestDelete(t *testing.T) {
 					Name:      "mymachine",
 					Namespace: "myns",
 					Annotations: map[string]string{
-						HostAnnotation: "myhost",
+						HostAnnotation: "myns/myhost",
 					},
 				},
 			},
@@ -417,7 +425,7 @@ func TestDelete(t *testing.T) {
 					Name:      "mymachine",
 					Namespace: "myns",
 					Annotations: map[string]string{
-						HostAnnotation: "myhost",
+						HostAnnotation: "myns/myhost",
 					},
 				},
 			},
@@ -439,7 +447,7 @@ func TestDelete(t *testing.T) {
 					Name:      "mymachine",
 					Namespace: "myns",
 					Annotations: map[string]string{
-						HostAnnotation: "myhost",
+						HostAnnotation: "myns/myhost",
 					},
 				},
 			},
@@ -452,7 +460,7 @@ func TestDelete(t *testing.T) {
 					Name:      "mymachine",
 					Namespace: "myns",
 					Annotations: map[string]string{
-						HostAnnotation: "myhost",
+						HostAnnotation: "myns/myhost",
 					},
 				},
 			},

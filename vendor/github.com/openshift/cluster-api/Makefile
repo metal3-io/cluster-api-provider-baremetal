@@ -41,7 +41,7 @@ dep-ensure: ## Runs dep-ensure and rebuilds Bazel gazelle files.
 
 .PHONY: test
 test: gazelle verify generate fmt vet manifests ## Run tests
-	go test -v -tags=integration ./pkg/... ./cmd/...
+	go test -v -timeout=20m -tags=integration ./pkg/... ./cmd/...
 
 .PHONY: manager
 manager: generate fmt vet ## Build manager binary
@@ -57,7 +57,7 @@ run: generate fmt vet ## Run against the configured Kubernetes cluster in ~/.kub
 
 .PHONY: deploy
 deploy: manifests ## Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-	kustomize build config/default | kubectl apply -f -
+	kustomize build config | kubectl apply -f -
 
 
 .PHONY: manifests
