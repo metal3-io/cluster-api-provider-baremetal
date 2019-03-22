@@ -25,9 +25,8 @@ required = [
   branch="master"
 
 [[constraint]]
-  name="github.com/operator-framework/operator-sdk"
+  name="sigs.k8s.io/cluster-api"
   branch="master"
-
 
 # STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT MODIFY BELOW THIS LINE.
 

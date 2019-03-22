@@ -19,14 +19,18 @@ package machine
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
+	"net/http"
+	"strings"
 	"time"
 
 	bmh "github.com/metalkube/baremetal-operator/pkg/apis/metalkube/v1alpha1"
-	machinev1 "github.com/openshift/cluster-api/pkg/apis/machine/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/tools/cache"
+	machinev1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -38,8 +42,8 @@ const (
 	// FIXME(dhellmann): These image values should probably come from
 	// configuration settings and something that can tell the IP
 	// address of the web server hosting the image in the ironic pod.
-	instanceImageSource   = "http://172.22.0.1/images/redhat-coreos-maipo-latest.qcow2"
-	instanceImageChecksum = "97830b21ed272a3d854615beb54cf004"
+	instanceImageSource      = "http://172.22.0.1/images/redhat-coreos-maipo-latest.qcow2"
+	instanceImageChecksumURL = instanceImageSource + ".md5sum"
 )
 
 // Add RBAC rules to access cluster-api resources
@@ -172,17 +176,22 @@ func (a *Actuator) getHost(ctx context.Context, machine *machinev1.Machine) (*bm
 	if annotations == nil {
 		return nil, nil
 	}
-	hostName, ok := annotations[HostAnnotation]
+	hostKey, ok := annotations[HostAnnotation]
 	if !ok {
 		return nil, nil
+	}
+	hostNamespace, hostName, err := cache.SplitMetaNamespaceKey(hostKey)
+	if err != nil {
+		log.Printf("Error parsing annotation value \"%s\": %v", hostKey, err)
+		return nil, err
 	}
 
 	host := bmh.BareMetalHost{}
 	key := client.ObjectKey{
 		Name:      hostName,
-		Namespace: machine.Namespace,
+		Namespace: hostNamespace,
 	}
-	err := a.client.Get(ctx, key, &host)
+	err = a.client.Get(ctx, key, &host)
 	if errors.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -193,8 +202,8 @@ func (a *Actuator) getHost(ctx context.Context, machine *machinev1.Machine) (*bm
 
 // chooseHost iterates through known hosts and returns one that can be
 // associated with the machine. It searches all hosts in case one already has an
-// association with this machine. It will add a Machine reference before
-// returning the host.
+// association with this machine. It will add a Machine reference and update the
+// host via the kube API before returning the host.
 func (a *Actuator) chooseHost(ctx context.Context, machine *machinev1.Machine) (*bmh.BareMetalHost, error) {
 	// get list of BMH
 	hosts := bmh.BareMetalHostList{}
@@ -225,11 +234,30 @@ func (a *Actuator) chooseHost(ctx context.Context, machine *machinev1.Machine) (
 		Name:      machine.Name,
 		Namespace: machine.Namespace,
 	}
+
+	// FIXME(dhellmann): The Stein version of Ironic supports passing
+	// a URL. When we upgrade, we can stop doing this work ourself.
+	log.Printf("looking for checksum for %s at %s",
+		instanceImageSource, instanceImageChecksumURL)
+	resp, err := http.Get(instanceImageChecksumURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	instanceImageChecksum, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
 	// FIXME(dhellmann): When we stop using the consts for these
 	// settings, we need to pass the right values.
 	chosenHost.Spec.Image = &bmh.Image{
 		URL:      instanceImageSource,
-		Checksum: instanceImageChecksum,
+		Checksum: strings.TrimSpace(string(instanceImageChecksum)),
+	}
+	err = a.client.Update(ctx, chosenHost)
+	if err != nil {
+		return nil, err
 	}
 
 	return chosenHost, nil
@@ -242,14 +270,19 @@ func (a *Actuator) ensureAnnotation(ctx context.Context, machine *machinev1.Mach
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
+	hostKey, err := cache.MetaNamespaceKeyFunc(host)
+	if err != nil {
+		log.Printf("Error parsing annotation value \"%s\": %v", hostKey, err)
+		return err
+	}
 	existing, ok := annotations[HostAnnotation]
 	if ok {
-		if existing == host.Name {
+		if existing == hostKey {
 			return nil
 		}
 		log.Printf("Warning: found stray annotation for host %s on machine %s. Overwriting.", existing, machine.Name)
 	}
-	annotations[HostAnnotation] = host.Name
+	annotations[HostAnnotation] = hostKey
 	machine.ObjectMeta.SetAnnotations(annotations)
 	return a.client.Update(ctx, machine)
 }

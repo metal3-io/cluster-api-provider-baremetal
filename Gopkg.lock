@@ -239,14 +239,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:38ef6f66fdd8f367a7b9a73dcd7b1c940f1c6050b10844a5706b0edc7c311adb"
+  digest = "1:6265482f47e903f1ee5b4711dacbdcedf221b143cac0c5a83295431ef47c9e07"
   name = "github.com/metalkube/baremetal-operator"
   packages = [
     "pkg/apis",
     "pkg/apis/metalkube/v1alpha1",
   ]
   pruneopts = "T"
-  revision = "94fc76f71fd65bac182b11e4e380a084e71cb7f9"
+  revision = "afbd799b0d39caf5def1b8ce64b738d8637c3bdb"
 
 [[projects]]
   digest = "1:33422d238f147d247752996a26574ac48dcf472976eda7f5134015f06bf16563"
@@ -313,23 +313,6 @@
   pruneopts = "T"
   revision = "65fb64232476ad9046e57c26cd0bff3d3a8dc6cd"
   version = "v1.4.3"
-
-[[projects]]
-  branch = "integration"
-  digest = "1:c49c9300cc3bcc68bc1380ac1bad9ccc190f4f53c58dc208d805eda92c3b9279"
-  name = "github.com/openshift/cluster-api"
-  packages = [
-    "pkg/apis",
-    "pkg/apis/cluster/common",
-    "pkg/apis/cluster/v1alpha1",
-    "pkg/apis/machine/common",
-    "pkg/apis/machine/v1beta1",
-    "pkg/controller/error",
-    "pkg/controller/machine",
-    "pkg/util",
-  ]
-  pruneopts = "T"
-  revision = "91fca585a85b163ddfd119fd09c128c9feadddca"
 
 [[projects]]
   digest = "1:e5d0bd87abc2781d14e274807a470acd180f0499f8bf5bb18606e9ec22ad9de9"
@@ -886,6 +869,21 @@
   revision = "ced9eb3070a5f1c548ef46e8dfe2a97c208d9f03"
 
 [[projects]]
+  branch = "master"
+  digest = "1:5c6ceec6293d32faf211ee10d8e8ab54543a857790943ccdf637aa72480a22da"
+  name = "sigs.k8s.io/cluster-api"
+  packages = [
+    "pkg/apis",
+    "pkg/apis/cluster/common",
+    "pkg/apis/cluster/v1alpha1",
+    "pkg/controller/error",
+    "pkg/controller/machine",
+    "pkg/util",
+  ]
+  pruneopts = "T"
+  revision = "26aa37ad8bcffd5b69e2a514b5e9a8ac30744134"
+
+[[projects]]
   digest = "1:5aa50779f75cc439edd3455a6dee7cf179b52f8dde764a47cc929693485d1afb"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
@@ -978,9 +976,6 @@
     "github.com/metalkube/baremetal-operator/pkg/apis/metalkube/v1alpha1",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
-    "github.com/openshift/cluster-api/pkg/apis",
-    "github.com/openshift/cluster-api/pkg/apis/machine/v1beta1",
-    "github.com/openshift/cluster-api/pkg/controller/machine",
     "golang.org/x/net/context",
     "k8s.io/api/core/v1",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
@@ -992,8 +987,12 @@
     "k8s.io/client-go/kubernetes/scheme",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
     "k8s.io/client-go/rest",
+    "k8s.io/client-go/tools/cache",
     "k8s.io/code-generator/cmd/client-gen",
     "k8s.io/code-generator/cmd/deepcopy-gen",
+    "sigs.k8s.io/cluster-api/pkg/apis",
+    "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1",
+    "sigs.k8s.io/cluster-api/pkg/controller/machine",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
     "sigs.k8s.io/controller-runtime/pkg/client/fake",
