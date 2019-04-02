@@ -326,8 +326,8 @@
   version = "v1.4.3"
 
 [[projects]]
-  branch = "master"
-  digest = "1:cd17ef33269d5987e062ea91796d7a7480b06281e02aaa25e48c38c1de170930"
+  branch = "openshift-4.0-cluster-api-0.0.0-alpha.4"
+  digest = "1:3cf9fcd481210b6c5d278afdfe2a8b78e7c29a08d439a8bab0492cf93d6ddd28"
   name = "github.com/openshift/cluster-api"
   packages = [
     "pkg/apis",
@@ -340,7 +340,7 @@
     "pkg/util",
   ]
   pruneopts = "T"
-  revision = "3f8a02c5cc17c4bc15ad1ec8766769e3d65917d1"
+  revision = "5e580f96e63e5db1fc8095ca5f587716a4a8d9e9"
 
 [[projects]]
   branch = "master"
