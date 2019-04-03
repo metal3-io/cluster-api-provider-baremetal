@@ -95,6 +95,17 @@ func TestChooseHost(t *testing.T) {
 			Hosts:            []runtime.Object{&host1, &host3, &host4},
 			ExpectedHostName: "",
 		},
+		{
+			// should pick host2, which lacks a MachineRef
+			Machine: machinev1.Machine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "machine1",
+					Namespace: "myns",
+				},
+			},
+			Hosts:            []runtime.Object{&host1, &host2},
+			ExpectedHostName: host2.Name,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -130,6 +141,119 @@ func TestChooseHost(t *testing.T) {
 		}
 		if savedHost.Spec.MachineRef == nil {
 			t.Errorf("machine ref %v not saved to host", result.Spec.MachineRef)
+		}
+	}
+}
+
+func TestIsMaster(t *testing.T) {
+
+	testCases := []struct {
+		Machine        machinev1.Machine
+		ExpectIsMaster bool
+	}{
+		{
+			Machine: machinev1.Machine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "master-0",
+					Namespace: "myns",
+					Labels: map[string]string{
+						machineRoleLabel: "master",
+					},
+				},
+			},
+			ExpectIsMaster: true,
+		},
+		{
+			Machine: machinev1.Machine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "worker-0",
+					Namespace: "myns",
+					Labels: map[string]string{
+						machineRoleLabel: "worker",
+					},
+				},
+			},
+			ExpectIsMaster: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		if isMaster(&tc.Machine) != tc.ExpectIsMaster {
+			t.Errorf("failed match for %s", tc.Machine.Name)
+		}
+	}
+}
+
+func TestChooseHostMaster(t *testing.T) {
+	scheme := runtime.NewScheme()
+	bmoapis.AddToScheme(scheme)
+
+	testCases := []struct {
+		Machine        machinev1.Machine
+		ExpectIsMaster bool
+	}{
+		{
+			Machine: machinev1.Machine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "master-0",
+					Namespace: "myns",
+					Labels: map[string]string{
+						machineRoleLabel: "master",
+					},
+				},
+			},
+			ExpectIsMaster: true,
+		},
+		{
+			Machine: machinev1.Machine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "worker-0",
+					Namespace: "myns",
+					Labels: map[string]string{
+						machineRoleLabel: "worker",
+					},
+				},
+			},
+			ExpectIsMaster: false,
+		},
+	}
+
+	for _, tc := range testCases {
+
+		host := bmh.BareMetalHost{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "host",
+				Namespace: "myns",
+			},
+		}
+		c := fakeclient.NewFakeClientWithScheme(scheme, &host)
+
+		actuator, err := NewActuator(ActuatorParams{
+			Client: c,
+		})
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+
+		result, err := actuator.chooseHost(context.TODO(), &tc.Machine)
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+
+		if tc.ExpectIsMaster {
+			if result.Spec.Image != nil {
+				t.Errorf("should not have an image")
+			}
+			if result.Spec.UserData != nil {
+				t.Errorf("should not have user data")
+			}
+		} else {
+			if result.Spec.Image == nil {
+				t.Errorf("should have an image")
+			}
+			if result.Spec.UserData == nil {
+				t.Errorf("should have user data")
+			}
 		}
 	}
 }

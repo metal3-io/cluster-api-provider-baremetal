@@ -43,6 +43,8 @@ const (
 	instanceImageSource      = "http://172.22.0.1/images/redhat-coreos-maipo-latest.qcow2"
 	instanceImageChecksumURL = instanceImageSource + ".md5sum"
 	requeueAfter             = time.Second * 30
+
+	machineRoleLabel = "sigs.k8s.io/cluster-api-machine-role"
 )
 
 // Add RBAC rules to access cluster-api resources
@@ -237,29 +239,48 @@ func (a *Actuator) chooseHost(ctx context.Context, machine *machinev1.Machine) (
 	// choose a host at random from available hosts
 	rand.Seed(time.Now().Unix())
 	chosenHost := availableHosts[rand.Intn(len(availableHosts))]
+
+	// Always connect the machine reference and ensure the host is set
+	// to stay powered on.
 	chosenHost.Spec.MachineRef = &corev1.ObjectReference{
 		Name:      machine.Name,
 		Namespace: machine.Namespace,
 	}
-
-	// FIXME(dhellmann): When we stop using the consts for these
-	// settings, we need to pass the right values.
-	chosenHost.Spec.Image = &bmh.Image{
-		URL:      instanceImageSource,
-		Checksum: instanceImageChecksumURL,
-	}
 	chosenHost.Spec.Online = true
-	chosenHost.Spec.UserData = &corev1.SecretReference{
-		Namespace: machine.Namespace, // is it safe to assume the same namespace?
-		// FIXME(dhellmann): Is this name openshift-specific?
-		Name: "worker-user-data",
+
+	// Only set the image for the host if it is not a master, because
+	// we do not want to reprovision over a master.
+	if !isMaster(machine) {
+		// FIXME(dhellmann): When we stop using the consts for these
+		// settings, we need to pass the right values.
+		chosenHost.Spec.Image = &bmh.Image{
+			URL:      instanceImageSource,
+			Checksum: instanceImageChecksumURL,
+		}
+		chosenHost.Spec.UserData = &corev1.SecretReference{
+			Namespace: machine.Namespace, // is it safe to assume the same namespace?
+			// FIXME(dhellmann): Is this name openshift-specific?
+			Name: "worker-user-data",
+		}
 	}
+
 	err := a.client.Update(ctx, chosenHost)
 	if err != nil {
 		return nil, err
 	}
 
 	return chosenHost, nil
+}
+
+func isMaster(machine *machinev1.Machine) bool {
+	if machine.Labels == nil {
+		return false
+	}
+	role, ok := machine.Labels[machineRoleLabel]
+	if !ok {
+		return false
+	}
+	return role == "master"
 }
 
 // ensureAnnotation makes sure the machine has an annotation that references the
