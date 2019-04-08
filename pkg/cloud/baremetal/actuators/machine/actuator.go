@@ -19,15 +19,13 @@ package machine
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
-	"net/http"
-	"strings"
 	"time"
 
 	bmh "github.com/metalkube/baremetal-operator/pkg/apis/metalkube/v1alpha1"
 	machinev1 "github.com/openshift/cluster-api/pkg/apis/machine/v1beta1"
+	clustererror "github.com/openshift/cluster-api/pkg/controller/error"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/cache"
@@ -44,6 +42,7 @@ const (
 	// address of the web server hosting the image in the ironic pod.
 	instanceImageSource      = "http://172.22.0.1/images/redhat-coreos-maipo-latest.qcow2"
 	instanceImageChecksumURL = instanceImageSource + ".md5sum"
+	requeueAfter             = time.Second * 30
 )
 
 // Add RBAC rules to access cluster-api resources
@@ -83,6 +82,10 @@ func (a *Actuator) Create(ctx context.Context, cluster *machinev1.Cluster, machi
 		if err != nil {
 			return err
 		}
+		if host == nil {
+			log.Printf("No available host found. Requeuing.")
+			return &clustererror.RequeueAfterError{RequeueAfter: requeueAfter}
+		}
 		log.Printf("Associating machine %s with host %s", machine.Name, host.Name)
 	} else {
 		log.Printf("Machine %s already associated with host %s", machine.Name, host.Name)
@@ -108,6 +111,9 @@ func (a *Actuator) Delete(ctx context.Context, cluster *machinev1.Cluster, machi
 		// don't remove the MachineRef if it references some other machine
 		if host.Spec.MachineRef.Name == machine.Name {
 			host.Spec.MachineRef = nil
+			host.Spec.Image = nil
+			host.Spec.Online = false
+			host.Spec.UserData = nil
 			err = a.client.Update(ctx, host)
 			if err != nil && !errors.IsNotFound(err) {
 				return err
@@ -203,7 +209,8 @@ func (a *Actuator) getHost(ctx context.Context, machine *machinev1.Machine) (*bm
 // chooseHost iterates through known hosts and returns one that can be
 // associated with the machine. It searches all hosts in case one already has an
 // association with this machine. It will add a Machine reference and update the
-// host via the kube API before returning the host.
+// host via the kube API before returning the host. Returns nil if a host is not
+// available.
 func (a *Actuator) chooseHost(ctx context.Context, machine *machinev1.Machine) (*bmh.BareMetalHost, error) {
 	// get list of BMH
 	hosts := bmh.BareMetalHostList{}
@@ -225,7 +232,7 @@ func (a *Actuator) chooseHost(ctx context.Context, machine *machinev1.Machine) (
 		}
 	}
 	if len(availableHosts) == 0 {
-		return nil, fmt.Errorf("No available host found")
+		return nil, nil
 	}
 	// choose a host at random from available hosts
 	rand.Seed(time.Now().Unix())
@@ -235,27 +242,19 @@ func (a *Actuator) chooseHost(ctx context.Context, machine *machinev1.Machine) (
 		Namespace: machine.Namespace,
 	}
 
-	// FIXME(dhellmann): The Stein version of Ironic supports passing
-	// a URL. When we upgrade, we can stop doing this work ourself.
-	log.Printf("looking for checksum for %s at %s",
-		instanceImageSource, instanceImageChecksumURL)
-	resp, err := http.Get(instanceImageChecksumURL)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	instanceImageChecksum, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
 	// FIXME(dhellmann): When we stop using the consts for these
 	// settings, we need to pass the right values.
 	chosenHost.Spec.Image = &bmh.Image{
 		URL:      instanceImageSource,
-		Checksum: strings.TrimSpace(string(instanceImageChecksum)),
+		Checksum: instanceImageChecksumURL,
 	}
-	err = a.client.Update(ctx, chosenHost)
+	chosenHost.Spec.Online = true
+	chosenHost.Spec.UserData = &corev1.SecretReference{
+		Namespace: machine.Namespace, // is it safe to assume the same namespace?
+		// FIXME(dhellmann): Is this name openshift-specific?
+		Name: "worker-user-data",
+	}
+	err := a.client.Update(ctx, chosenHost)
 	if err != nil {
 		return nil, err
 	}
