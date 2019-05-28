@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net"
 	"time"
 
 	bmh "github.com/metal3-io/baremetal-operator/pkg/apis/metal3/v1alpha1"
@@ -428,6 +429,19 @@ func (a *Actuator) nodeAddresses(host *bmh.BareMetalHost) ([]corev1.NodeAddress,
 			Address: nic.IP,
 		}
 		addrs = append(addrs, address)
+
+		names, err := net.LookupAddr(nic.IP)
+		if err != nil {
+			log.Printf("Bad lookup - %v", err)
+			continue
+		}
+		for _, name := range names {
+			nameAddress := corev1.NodeAddress{
+				Type:    "Hostname",
+				Address: name,
+			}
+			addrs = append(addrs, nameAddress)
+		}
 	}
 
 	return addrs, nil
