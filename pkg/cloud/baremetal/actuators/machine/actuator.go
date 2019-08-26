@@ -44,8 +44,10 @@ const (
 	ProviderName = "baremetal"
 	// HostAnnotation is the key for an annotation that should go on a Machine to
 	// reference what BareMetalHost it corresponds to.
-	HostAnnotation = "metal3.io/BareMetalHost"
-	requeueAfter   = time.Second * 30
+	HostAnnotation          = "metal3.io/BareMetalHost"
+	requeueAfter            = time.Second * 30
+	InstanceTypeLabel       = "metal3.io/instance-type"
+	InstanceStateAnnotation = "metal3.io/instance-state"
 )
 
 // Add RBAC rules to access cluster-api resources
@@ -128,7 +130,7 @@ func (a *Actuator) Create(ctx context.Context, cluster *machinev1.Cluster, machi
 		return err
 	}
 
-	if err := a.updateMachineStatus(ctx, machine, host); err != nil {
+	if err := a.updateMachine(ctx, machine, host); err != nil {
 		return err
 	}
 
@@ -211,7 +213,7 @@ func (a *Actuator) Update(ctx context.Context, cluster *machinev1.Cluster, machi
 		return err
 	}
 
-	if err := a.updateMachineStatus(ctx, machine, host); err != nil {
+	if err := a.updateMachine(ctx, machine, host); err != nil {
 		return err
 	}
 
@@ -472,8 +474,25 @@ func configFromProviderSpec(providerSpec machinev1.ProviderSpec) (*bmv1alpha1.Ba
 	return &config, nil
 }
 
-// updateMachineStatus updates a machine object's status.
-func (a *Actuator) updateMachineStatus(ctx context.Context, machine *machinev1.Machine, host *bmh.BareMetalHost) error {
+// updateMachine updates a machine object's status, labels, and annotations.
+func (a *Actuator) updateMachine(ctx context.Context, machine *machinev1.Machine, host *bmh.BareMetalHost) error {
+	machineLabels := machine.ObjectMeta.GetLabels()
+	if machineLabels == nil {
+		machineLabels = make(map[string]string)
+	}
+	machineLabels[InstanceTypeLabel] = host.Status.HardwareProfile
+	machine.ObjectMeta.SetLabels(machineLabels)
+	machineAnnotations := machine.ObjectMeta.GetAnnotations()
+	if machineAnnotations == nil {
+		machineAnnotations = make(map[string]string)
+	}
+	machineAnnotations[InstanceStateAnnotation] = strings.Replace(string(host.Status.Provisioning.State), " ", "_", -1)
+	machine.ObjectMeta.SetAnnotations(machineAnnotations)
+	err := a.client.Update(ctx, machine)
+	if err != nil {
+		return err
+	}
+
 	addrs, err := a.nodeAddresses(host)
 	if err != nil {
 		return err

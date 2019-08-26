@@ -2,6 +2,7 @@ package machine
 
 import (
 	"context"
+	"reflect"
 	"testing"
 	"time"
 
@@ -1158,7 +1159,7 @@ func newConfig(t *testing.T, UserDataNamespace string, labels map[string]string,
 	}
 }
 
-func TestUpdateMachineStatus(t *testing.T) {
+func TestUpdateMachine(t *testing.T) {
 	scheme := runtime.NewScheme()
 	clusterapis.AddToScheme(scheme)
 
@@ -1171,9 +1172,11 @@ func TestUpdateMachineStatus(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Host            *bmh.BareMetalHost
-		Machine         *machinev1.Machine
-		ExpectedMachine machinev1.Machine
+		Host                *bmh.BareMetalHost
+		Machine             *machinev1.Machine
+		ExpectedMachine     machinev1.Machine
+		ExpectedLabels      map[string]string
+		ExpectedAnnotations map[string]string
 	}{
 		{
 			// machine status updated
@@ -1181,6 +1184,10 @@ func TestUpdateMachineStatus(t *testing.T) {
 				Status: bmh.BareMetalHostStatus{
 					HardwareDetails: &bmh.HardwareDetails{
 						NIC: []bmh.NIC{nic1, nic2},
+					},
+					HardwareProfile: "dell",
+					Provisioning: bmh.ProvisionStatus{
+						State: "ready",
 					},
 				},
 			},
@@ -1205,6 +1212,12 @@ func TestUpdateMachineStatus(t *testing.T) {
 					},
 				},
 			},
+			ExpectedLabels: map[string]string{
+				InstanceTypeLabel: "dell",
+			},
+			ExpectedAnnotations: map[string]string{
+				InstanceStateAnnotation: "ready",
+			},
 		},
 		{
 			// machine status unchanged
@@ -1212,6 +1225,10 @@ func TestUpdateMachineStatus(t *testing.T) {
 				Status: bmh.BareMetalHostStatus{
 					HardwareDetails: &bmh.HardwareDetails{
 						NIC: []bmh.NIC{nic1, nic2},
+					},
+					HardwareProfile: "dell",
+					Provisioning: bmh.ProvisionStatus{
+						State: "provisioning error",
 					},
 				},
 			},
@@ -1246,6 +1263,12 @@ func TestUpdateMachineStatus(t *testing.T) {
 						},
 					},
 				},
+			},
+			ExpectedLabels: map[string]string{
+				InstanceTypeLabel: "dell",
+			},
+			ExpectedAnnotations: map[string]string{
+				InstanceStateAnnotation: "provisioning_error",
 			},
 		},
 		{
@@ -1260,6 +1283,12 @@ func TestUpdateMachineStatus(t *testing.T) {
 			},
 			ExpectedMachine: machinev1.Machine{
 				Status: machinev1.MachineStatus{},
+			},
+			ExpectedLabels: map[string]string{
+				InstanceTypeLabel: "",
+			},
+			ExpectedAnnotations: map[string]string{
+				InstanceStateAnnotation: "",
 			},
 		},
 	}
@@ -1276,7 +1305,7 @@ func TestUpdateMachineStatus(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = actuator.updateMachineStatus(context.TODO(), tc.Machine, tc.Host)
+		err = actuator.updateMachine(context.TODO(), tc.Machine, tc.Host)
 		if err != nil {
 			t.Errorf("unexpected error %v", err)
 		}
@@ -1301,6 +1330,14 @@ func TestUpdateMachineStatus(t *testing.T) {
 						t.Errorf("expected Address %v, found %v", address, machine.Status.Addresses[i])
 					}
 				}
+			}
+
+			if reflect.DeepEqual(tc.ExpectedLabels, machine.ObjectMeta.Labels) == false {
+				t.Errorf("expected Machine labels: %v, found %v", tc.ExpectedLabels, machine.ObjectMeta.Labels)
+			}
+
+			if reflect.DeepEqual(tc.ExpectedAnnotations, machine.ObjectMeta.Annotations) == false {
+				t.Errorf("expected Machine annotations: %v, found %v", tc.ExpectedAnnotations, machine.ObjectMeta.Annotations)
 			}
 		}
 	}
