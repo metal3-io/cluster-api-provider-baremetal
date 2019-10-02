@@ -25,7 +25,7 @@ import (
 	"time"
 
 	bmh "github.com/metal3-io/baremetal-operator/pkg/apis/metal3/v1alpha1"
-	bmv1alpha1 "github.com/metal3-io/cluster-api-provider-baremetal/pkg/apis/baremetal/v1alpha1"
+	capbm "sigs.k8s.io/cluster-api-provider-baremetal/api/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -33,10 +33,9 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/cache"
-	"sigs.k8s.io/cluster-api/pkg/apis/cluster/common"
-	machinev1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
-	clustererror "sigs.k8s.io/cluster-api/pkg/controller/error"
+	capi "sigs.k8s.io/cluster-api/api/v1alpha2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
 )
 
@@ -74,7 +73,7 @@ func NewActuator(params ActuatorParams) (*Actuator, error) {
 }
 
 // Create creates a machine and is invoked by the Machine Controller
-func (a *Actuator) Create(ctx context.Context, cluster *machinev1.Cluster, machine *machinev1.Machine) error {
+func (a *Actuator) Create(ctx context.Context, cluster *capi.Cluster, machine *capi.Machine) error {
 	log.Printf("Creating machine %v .", machine.Name)
 
 	// load and validate the config
@@ -111,7 +110,7 @@ func (a *Actuator) Create(ctx context.Context, cluster *machinev1.Cluster, machi
 		}
 		if host == nil {
 			log.Printf("No available host found. Requeuing.")
-			return &clustererror.RequeueAfterError{RequeueAfter: requeueAfter}
+			return RequeueAfterError{RequeueAfter: requeueAfter}
 		}
 		log.Printf("Associating machine %s with host %s", machine.Name, host.Name)
 	} else {
@@ -137,7 +136,7 @@ func (a *Actuator) Create(ctx context.Context, cluster *machinev1.Cluster, machi
 }
 
 // Delete deletes a machine and is invoked by the Machine Controller
-func (a *Actuator) Delete(ctx context.Context, cluster *machinev1.Cluster, machine *machinev1.Machine) error {
+func (a *Actuator) Delete(ctx context.Context, cluster *capi.Cluster, machine *capi.Machine) error {
 	log.Printf("Deleting machine %v .", machine.Name)
 	host, err := a.getHost(ctx, machine)
 	if err != nil {
@@ -188,7 +187,7 @@ func (a *Actuator) Delete(ctx context.Context, cluster *machinev1.Cluster, machi
 }
 
 // Update updates a machine and is invoked by the Machine Controller
-func (a *Actuator) Update(ctx context.Context, cluster *machinev1.Cluster, machine *machinev1.Machine) error {
+func (a *Actuator) Update(ctx context.Context, cluster *capi.Cluster, machine *capi.Machine) error {
 	log.Printf("Updating machine %v .", machine.Name)
 
 	// clear any error message that was previously set. This method doesn't set
@@ -220,7 +219,7 @@ func (a *Actuator) Update(ctx context.Context, cluster *machinev1.Cluster, machi
 }
 
 // Exists tests for the existence of a machine and is invoked by the Machine Controller
-func (a *Actuator) Exists(ctx context.Context, cluster *machinev1.Cluster, machine *machinev1.Machine) (bool, error) {
+func (a *Actuator) Exists(ctx context.Context, cluster *capi.Cluster, machine *capi.Machine) (bool, error) {
 	log.Printf("Checking if machine %v exists.", machine.Name)
 	host, err := a.getHost(ctx, machine)
 	if err != nil {
@@ -239,13 +238,13 @@ func (a *Actuator) Exists(ctx context.Context, cluster *machinev1.Cluster, machi
 // (https://github.com/kubernetes-sigs/cluster-api/issues/160).
 
 // GetIP returns IP address of the machine in the cluster.
-func (a *Actuator) GetIP(cluster *machinev1.Cluster, machine *machinev1.Machine) (string, error) {
+func (a *Actuator) GetIP(cluster *capi.Cluster, machine *capi.Machine) (string, error) {
 	log.Printf("Getting IP of machine %v .", machine.Name)
 	return "", fmt.Errorf("TODO: Not yet implemented")
 }
 
 // GetKubeConfig gets a kubeconfig from the running control plane.
-func (a *Actuator) GetKubeConfig(cluster *machinev1.Cluster, controlPlaneMachine *machinev1.Machine) (string, error) {
+func (a *Actuator) GetKubeConfig(cluster *capi.Cluster, controlPlaneMachine *capi.Machine) (string, error) {
 	log.Printf("Getting IP of machine %v .", controlPlaneMachine.Name)
 	return "", fmt.Errorf("TODO: Not yet implemented")
 }
@@ -253,7 +252,7 @@ func (a *Actuator) GetKubeConfig(cluster *machinev1.Cluster, controlPlaneMachine
 // getHost gets the associated host by looking for an annotation on the machine
 // that contains a reference to the host. Returns nil if not found. Assumes the
 // host is in the same namespace as the machine.
-func (a *Actuator) getHost(ctx context.Context, machine *machinev1.Machine) (*bmh.BareMetalHost, error) {
+func (a *Actuator) getHost(ctx context.Context, machine *capi.Machine) (*bmh.BareMetalHost, error) {
 	annotations := machine.ObjectMeta.GetAnnotations()
 	if annotations == nil {
 		return nil, nil
@@ -286,8 +285,8 @@ func (a *Actuator) getHost(ctx context.Context, machine *machinev1.Machine) (*bm
 // chooseHost iterates through known hosts and returns one that can be
 // associated with the machine. It searches all hosts in case one already has an
 // association with this machine.
-func (a *Actuator) chooseHost(ctx context.Context, machine *machinev1.Machine,
-	config *bmv1alpha1.BareMetalMachineProviderSpec) (*bmh.BareMetalHost, error) {
+func (a *Actuator) chooseHost(ctx context.Context, machine *capi.Machine,
+	config *capbm.BareMetalMachineProviderSpec) (*bmh.BareMetalHost, error) {
 
 	// get list of BMH
 	hosts := bmh.BareMetalHostList{}
@@ -354,7 +353,7 @@ func (a *Actuator) chooseHost(ctx context.Context, machine *machinev1.Machine,
 
 // consumerRefMatches returns a boolean based on whether the consumer
 // reference and machine metadata match
-func consumerRefMatches(consumer *corev1.ObjectReference, machine *machinev1.Machine) bool {
+func consumerRefMatches(consumer *corev1.ObjectReference, machine *capi.Machine) bool {
 	if consumer.Name != machine.Name {
 		return false
 	}
@@ -373,8 +372,8 @@ func consumerRefMatches(consumer *corev1.ObjectReference, machine *machinev1.Mac
 // setHostSpec will ensure the host's Spec is set according to the machine's
 // details. It will then update the host via the kube API. If UserData does not
 // include a Namespace, it will default to the Machine's namespace.
-func (a *Actuator) setHostSpec(ctx context.Context, host *bmh.BareMetalHost, machine *machinev1.Machine,
-	config *bmv1alpha1.BareMetalMachineProviderSpec) error {
+func (a *Actuator) setHostSpec(ctx context.Context, host *bmh.BareMetalHost, machine *capi.Machine,
+	config *capbm.BareMetalMachineProviderSpec) error {
 
 	// We only want to update the image setting if the host does not
 	// already have an image.
@@ -406,7 +405,7 @@ func (a *Actuator) setHostSpec(ctx context.Context, host *bmh.BareMetalHost, mac
 
 // ensureAnnotation makes sure the machine has an annotation that references the
 // host and uses the API to update the machine if necessary.
-func (a *Actuator) ensureAnnotation(ctx context.Context, machine *machinev1.Machine, host *bmh.BareMetalHost) error {
+func (a *Actuator) ensureAnnotation(ctx context.Context, machine *capi.Machine, host *bmh.BareMetalHost) error {
 	annotations := machine.ObjectMeta.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
@@ -431,9 +430,9 @@ func (a *Actuator) ensureAnnotation(ctx context.Context, machine *machinev1.Mach
 // setError sets the ErrorMessage and ErrorReason fields on the machine and logs
 // the message. It assumes the reason is invalid configuration, since that is
 // currently the only relevant MachineStatusError choice.
-func (a *Actuator) setError(ctx context.Context, machine *machinev1.Machine, message string) error {
+func (a *Actuator) setError(ctx context.Context, machine *capi.Machine, message string) error {
 	machine.Status.ErrorMessage = &message
-	reason := common.InvalidConfigurationMachineError
+	reason := capi.InvalidConfigurationMachineError
 	machine.Status.ErrorReason = &reason
 	log.Printf("Machine %s: %s", machine.Name, message)
 	return a.client.Status().Update(ctx, machine)
@@ -442,7 +441,7 @@ func (a *Actuator) setError(ctx context.Context, machine *machinev1.Machine, mes
 // clearError removes the ErrorMessage from the machine's Status if set. Returns
 // nil if ErrorMessage was already nil. Returns a RequeueAfterError if the
 // machine was updated.
-func (a *Actuator) clearError(ctx context.Context, machine *machinev1.Machine) error {
+func (a *Actuator) clearError(ctx context.Context, machine *capi.Machine) error {
 	if machine.Status.ErrorMessage != nil || machine.Status.ErrorReason != nil {
 		machine.Status.ErrorMessage = nil
 		machine.Status.ErrorReason = nil
@@ -458,12 +457,12 @@ func (a *Actuator) clearError(ctx context.Context, machine *machinev1.Machine) e
 
 // configFromProviderSpec returns a BareMetalMachineProviderSpec by
 // deserializing the contents of a ProviderSpec
-func configFromProviderSpec(providerSpec machinev1.ProviderSpec) (*bmv1alpha1.BareMetalMachineProviderSpec, error) {
+func configFromProviderSpec(providerSpec capi.ProviderSpec) (*capbm.BareMetalMachineProviderSpec, error) {
 	if providerSpec.Value == nil {
 		return nil, fmt.Errorf("ProviderSpec missing")
 	}
 
-	var config bmv1alpha1.BareMetalMachineProviderSpec
+	var config capbm.BareMetalMachineProviderSpec
 	err := yaml.UnmarshalStrict(providerSpec.Value.Raw, &config)
 	if err != nil {
 		return nil, err
@@ -473,7 +472,7 @@ func configFromProviderSpec(providerSpec machinev1.ProviderSpec) (*bmv1alpha1.Ba
 }
 
 // updateMachineStatus updates a machine object's status.
-func (a *Actuator) updateMachineStatus(ctx context.Context, machine *machinev1.Machine, host *bmh.BareMetalHost) error {
+func (a *Actuator) updateMachineStatus(ctx context.Context, machine *capi.Machine, host *bmh.BareMetalHost) error {
 	addrs, err := a.nodeAddresses(host)
 	if err != nil {
 		return err
@@ -486,7 +485,7 @@ func (a *Actuator) updateMachineStatus(ctx context.Context, machine *machinev1.M
 	return nil
 }
 
-func (a *Actuator) applyMachineStatus(ctx context.Context, machine *machinev1.Machine, addrs []corev1.NodeAddress) error {
+func (a *Actuator) applyMachineStatus(ctx context.Context, machine *capi.Machine, addrs []corev1.NodeAddress) error {
 	machineCopy := machine.DeepCopy()
 	machineCopy.Status.Addresses = addrs
 

@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	admtypes "sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
+	admtypes "sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // New returns a new manager wrapper. It intercepts the controller when it gets
