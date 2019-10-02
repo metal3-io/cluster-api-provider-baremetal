@@ -25,7 +25,6 @@ import (
 	"time"
 
 	bmh "github.com/metal3-io/baremetal-operator/pkg/apis/metal3/v1alpha1"
-	capbm "sigs.k8s.io/cluster-api-provider-baremetal/api/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -33,9 +32,9 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/cache"
+	capbm "sigs.k8s.io/cluster-api-provider-baremetal/api/v1alpha2"
 	capi "sigs.k8s.io/cluster-api/api/v1alpha2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
 )
 
@@ -110,7 +109,7 @@ func (a *Actuator) Create(ctx context.Context, cluster *capi.Cluster, machine *c
 		}
 		if host == nil {
 			log.Printf("No available host found. Requeuing.")
-			return RequeueAfterError{RequeueAfter: requeueAfter}
+			return &RequeueAfterError{RequeueAfter: requeueAfter}
 		}
 		log.Printf("Associating machine %s with host %s", machine.Name, host.Name)
 	} else {
@@ -157,7 +156,7 @@ func (a *Actuator) Delete(ctx context.Context, cluster *capi.Cluster, machine *c
 			if err != nil && !errors.IsNotFound(err) {
 				return err
 			}
-			return &clustererror.RequeueAfterError{}
+			return &RequeueAfterError{}
 		}
 
 		waiting := true
@@ -173,7 +172,7 @@ func (a *Actuator) Delete(ctx context.Context, cluster *capi.Cluster, machine *c
 			waiting = host.Status.PoweredOn
 		}
 		if waiting {
-			return &clustererror.RequeueAfterError{RequeueAfter: requeueAfter}
+			return &RequeueAfterError{RequeueAfter: requeueAfter}
 		} else {
 			host.Spec.ConsumerRef = nil
 			err = a.client.Update(ctx, host)
@@ -450,7 +449,7 @@ func (a *Actuator) clearError(ctx context.Context, machine *capi.Machine) error 
 			return err
 		}
 		log.Printf("Cleared error message from machine %s", machine.Name)
-		return &clustererror.RequeueAfterError{}
+		return &RequeueAfterError{}
 	}
 	return nil
 }

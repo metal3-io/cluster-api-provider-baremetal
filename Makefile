@@ -72,8 +72,13 @@ help:  ## Display this help
 ## Testing
 ## --------------------------------------
 
+.PHONY: testprereqs
+testprereqs:
+	@if [ ! -d /usr/local/kubebuilder ] ; then echo "kubebuilder not found.  See docs/dev/setup.md" && exit 1 ; fi
+	@if ! which kustomize >/dev/null 2>&1 ; then echo "Running 'go get sigs.k8s.io/kustomize'" && go get sigs.k8s.io/kustomize ; fi
+
 .PHONY: test
-test: generate lint ## Run tests
+test: testprereqs generate fmt lint ## Run tests
 	go test -v ./...
 
 .PHONY: test-integration
@@ -130,6 +135,15 @@ lint: $(GOLANGCI_LINT) ## Lint codebase
 
 lint-full: $(GOLANGCI_LINT) ## Run slower linters to detect possible issues
 	$(GOLANGCI_LINT) run -v --fast=false
+
+# Run go fmt against code
+fmt:
+	go fmt ./pkg/... ./cmd/...
+
+# Run go vet against code
+vet:
+	go vet ./pkg/... ./cmd/...
+
 
 ## --------------------------------------
 ## Generate
@@ -224,6 +238,31 @@ set-manifest-image:
 set-manifest-pull-policy:
 	$(info Updating kustomize pull policy file for manager resource)
 	sed -i'' -e 's@imagePullPolicy: .*@imagePullPolicy: '"$(PULL_POLICY)"'@' ./config/default/manager_pull_policy.yaml
+
+## --------------------------------------
+## Deploying
+## --------------------------------------
+
+manifests: generate-manifests
+	kustomize build config/ > provider-components.yaml
+	echo "---" >> provider-components.yaml
+#	kustomize build sigs.k8s.io/cluster-api/config/default/ | \
+#		sed -e 's/namespace: cluster-api-system/namespace: metal3/' >> ../provider-components.yaml
+
+unit: manifests
+	go test ./pkg/... ./cmd/... -coverprofile cover.out
+
+# Run against the configured Kubernetes cluster in ~/.kube/config
+run: generate fmt vet
+	go run ./cmd/manager/main.go
+
+# Install CRDs into a cluster
+install: manifests
+	kubectl apply -f config/crds
+
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy: manifests
+	cat provider-components.yaml | kubectl apply -f -
 
 ## --------------------------------------
 ## Release
