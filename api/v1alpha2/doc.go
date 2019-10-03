@@ -19,5 +19,5 @@ limitations under the License.
 // +k8s:deepcopy-gen=package,register
 // +k8s:defaulter-gen=TypeMeta
 // +kubebuilder:object:generate=true
-// +groupName=baremetal.cluster.k8s.io
+// +groupName=infrastructure.cluster.x-k8s.io
 package v1alpha2

@@ -244,7 +244,7 @@ set-manifest-pull-policy:
 ## --------------------------------------
 
 manifests: generate-manifests
-	kustomize build config/ > provider-components.yaml
+	kustomize build config/default > provider-components.yaml
 	echo "---" >> provider-components.yaml
 #	kustomize build sigs.k8s.io/cluster-api/config/default/ | \
 #		sed -e 's/namespace: cluster-api-system/namespace: metal3/' >> ../provider-components.yaml

@@ -166,6 +166,7 @@ func TestStorageBareMetalMachineSpec(t *testing.T) {
 		Name:      "foo",
 		Namespace: "default",
 	}
+
 	created := &BareMetalMachine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
@@ -177,6 +178,7 @@ func TestStorageBareMetalMachineSpec(t *testing.T) {
 			},
 		},
 	}
+
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create
@@ -188,6 +190,7 @@ func TestStorageBareMetalMachineSpec(t *testing.T) {
 
 	// Test Updating the Labels
 	updated := fetched.DeepCopy()
+	updated.Labels = map[string]string{"hello": "world"}
 	g.Expect(c.Update(context.TODO(), updated)).NotTo(gomega.HaveOccurred())
 
 	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
