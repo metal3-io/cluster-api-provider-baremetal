@@ -79,7 +79,7 @@ testprereqs:
 
 .PHONY: test
 test: testprereqs generate fmt lint ## Run tests
-	go test -v ./...
+	go test -v ./api/... ./controllers/...
 
 .PHONY: test-integration
 test-integration: ## Run integration tests
@@ -138,11 +138,11 @@ lint-full: $(GOLANGCI_LINT) ## Run slower linters to detect possible issues
 
 # Run go fmt against code
 fmt:
-	go fmt ./pkg/... ./cmd/...
+	go fmt ./api/... ./controllers/... .
 
 # Run go vet against code
 vet:
-	go vet ./pkg/... ./cmd/...
+	go vet ./api/... ./controllers/... .
 
 
 ## --------------------------------------
@@ -250,7 +250,7 @@ manifests: generate-manifests
 #		sed -e 's/namespace: cluster-api-system/namespace: metal3/' >> ../provider-components.yaml
 
 unit: manifests
-	go test ./pkg/... ./cmd/... -coverprofile cover.out
+	go test ./api/... ./controllers/... -coverprofile cover.out
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: generate fmt vet

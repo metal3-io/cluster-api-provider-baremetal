@@ -18,21 +18,22 @@ package v1alpha2
 
 import (
 	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/selection"
 )
 
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+const (
+	// MachineFinalizer allows ReconcileBareMetalMachine to clean up resources associated with AWSMachine before
+	// removing it from the apiserver.
+	MachineFinalizer = "baremetalmachine.infrastructure.cluster.x-k8s.io"
+)
 
-// BareMetalMachineProviderSpec holds data that the actuator needs to provision
-// and manage a Machine.
-// +k8s:openapi-gen=true
-type BareMetalMachineProviderSpec struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+// BareMetalMachineSpec defines the desired state of BareMetalMachine
+type BareMetalMachineSpec struct {
+	// ProviderID will be the container name in ProviderID format (baremetal:////<containername>)
+	// +optional
+	ProviderID *string `json:"providerID,omitempty"`
 
 	// Image is the image to be provisioned.
 	Image Image `json:"image"`
@@ -76,7 +77,7 @@ type Image struct {
 
 // IsValid returns an error if the object is not valid, otherwise nil. The
 // string representation of the error is suitable for human consumption.
-func (s *BareMetalMachineProviderSpec) IsValid() error {
+func (s *BareMetalMachineSpec) IsValid() error {
 	missing := []string{}
 	if s.Image.URL == "" {
 		missing = append(missing, "Image.URL")
@@ -90,15 +91,36 @@ func (s *BareMetalMachineProviderSpec) IsValid() error {
 	return nil
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// BareMetalMachineStatus defines the observed state of BareMetalMachine
+type BareMetalMachineStatus struct {
+	// Ready denotes that the machine (baremetal container) is ready
+	Ready bool `json:"ready"`
+}
 
-// BareMetalMachineProviderSpecList contains a list of BareMetalMachineProviderSpec
-type BareMetalMachineProviderSpecList struct {
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:resource:path=baremetalmachines,scope=Namespaced,categories=cluster-api
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+// +kubebuilder:subresource:status
+
+// BareMetalMachine is the Schema for the baremetalmachines API
+type BareMetalMachine struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   BareMetalMachineSpec   `json:"spec,omitempty"`
+	Status BareMetalMachineStatus `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// BareMetalMachineList contains a list of BareMetalMachine
+type BareMetalMachineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []BareMetalMachineProviderSpec `json:"items"`
+	Items           []BareMetalMachine `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&BareMetalMachineProviderSpec{}, &BareMetalMachineProviderSpecList{})
+	SchemeBuilder.Register(&BareMetalMachine{}, &BareMetalMachineList{})
 }

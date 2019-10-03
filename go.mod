@@ -3,10 +3,12 @@ module sigs.k8s.io/cluster-api-provider-baremetal
 go 1.13
 
 require (
+	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6 // indirect
 	github.com/metal3-io/baremetal-operator v0.0.0-20190819121436-baef9fee055e
 	github.com/onsi/gomega v1.5.0
+	github.com/pkg/errors v0.8.1
 	github.com/prometheus/common v0.6.0 // indirect
 	github.com/prometheus/procfs v0.0.3 // indirect
 	go.uber.org/atomic v1.4.0 // indirect
@@ -21,6 +23,7 @@ require (
 	k8s.io/klog v1.0.0
 	sigs.k8s.io/cluster-api v0.2.3
 	sigs.k8s.io/controller-runtime v0.2.2
+	sigs.k8s.io/kind v0.5.1
 	sigs.k8s.io/yaml v1.1.0
 )
 

@@ -26,19 +26,19 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func TestProviderSpecIsValid(t *testing.T) {
+func TestSpecIsValid(t *testing.T) {
 	cases := []struct {
-		Spec          BareMetalMachineProviderSpec
+		Spec          BareMetalMachineSpec
 		ErrorExpected bool
 		Name          string
 	}{
 		{
-			Spec:          BareMetalMachineProviderSpec{},
+			Spec:          BareMetalMachineSpec{},
 			ErrorExpected: true,
 			Name:          "empty spec",
 		},
 		{
-			Spec: BareMetalMachineProviderSpec{
+			Spec: BareMetalMachineSpec{
 				Image: Image{
 					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
 					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
@@ -51,7 +51,7 @@ func TestProviderSpecIsValid(t *testing.T) {
 			Name:          "Valid spec without UserData.Namespace",
 		},
 		{
-			Spec: BareMetalMachineProviderSpec{
+			Spec: BareMetalMachineSpec{
 				Image: Image{
 					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
 					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
@@ -65,7 +65,7 @@ func TestProviderSpecIsValid(t *testing.T) {
 			Name:          "Valid spec with UserData.Namespace",
 		},
 		{
-			Spec: BareMetalMachineProviderSpec{
+			Spec: BareMetalMachineSpec{
 				Image: Image{
 					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
 				},
@@ -77,7 +77,7 @@ func TestProviderSpecIsValid(t *testing.T) {
 			Name:          "missing Image.URL",
 		},
 		{
-			Spec: BareMetalMachineProviderSpec{
+			Spec: BareMetalMachineSpec{
 				Image: Image{
 					URL: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
 				},
@@ -89,7 +89,7 @@ func TestProviderSpecIsValid(t *testing.T) {
 			Name:          "missing Image.Checksum",
 		},
 		{
-			Spec: BareMetalMachineProviderSpec{
+			Spec: BareMetalMachineSpec{
 				Image: Image{
 					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
 					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
@@ -99,7 +99,7 @@ func TestProviderSpecIsValid(t *testing.T) {
 			Name:          "missing optional UserData",
 		},
 		{
-			Spec: BareMetalMachineProviderSpec{
+			Spec: BareMetalMachineSpec{
 				Image: Image{
 					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
 					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
@@ -112,7 +112,7 @@ func TestProviderSpecIsValid(t *testing.T) {
 			Name:          "missing optional UserData.Name",
 		},
 		{
-			Spec: BareMetalMachineProviderSpec{
+			Spec: BareMetalMachineSpec{
 				Image: Image{
 					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
 					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
@@ -123,7 +123,7 @@ func TestProviderSpecIsValid(t *testing.T) {
 			Name:          "Empty HostSelector provided",
 		},
 		{
-			Spec: BareMetalMachineProviderSpec{
+			Spec: BareMetalMachineSpec{
 				Image: Image{
 					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
 					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
@@ -136,7 +136,7 @@ func TestProviderSpecIsValid(t *testing.T) {
 			Name:          "HostSelector Single MatchLabel provided",
 		},
 		{
-			Spec: BareMetalMachineProviderSpec{
+			Spec: BareMetalMachineSpec{
 				Image: Image{
 					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
 					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
@@ -161,24 +161,26 @@ func TestProviderSpecIsValid(t *testing.T) {
 	}
 }
 
-func TestStorageBareMetalMachineProviderSpec(t *testing.T) {
+func TestStorageBareMetalMachineSpec(t *testing.T) {
 	key := types.NamespacedName{
 		Name:      "foo",
 		Namespace: "default",
 	}
-	created := &BareMetalMachineProviderSpec{
+	created := &BareMetalMachine{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "default",
 		},
-		UserData: &corev1.SecretReference{
-			Name: "foo",
+		Spec: BareMetalMachineSpec{
+			UserData: &corev1.SecretReference{
+				Name: "foo",
+			},
 		},
 	}
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create
-	fetched := &BareMetalMachineProviderSpec{}
+	fetched := &BareMetalMachine{}
 	g.Expect(c.Create(context.TODO(), created)).NotTo(gomega.HaveOccurred())
 
 	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
@@ -186,7 +188,6 @@ func TestStorageBareMetalMachineProviderSpec(t *testing.T) {
 
 	// Test Updating the Labels
 	updated := fetched.DeepCopy()
-	updated.Labels = map[string]string{"hello": "world"}
 	g.Expect(c.Update(context.TODO(), updated)).NotTo(gomega.HaveOccurred())
 
 	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())

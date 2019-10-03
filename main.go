@@ -18,114 +18,78 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"time"
 
-	bmoapis "github.com/metal3-io/baremetal-operator/pkg/apis"
-	capbm "sigs.k8s.io/cluster-api-provider-baremetal/api/v1alpha2"
-	"sigs.k8s.io/cluster-api-provider-baremetal/pkg/cloud/baremetal/actuators/machine"
-	"sigs.k8s.io/cluster-api-provider-baremetal/pkg/manager/wrapper"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/rest"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/klog"
-	clusterapis "sigs.k8s.io/cluster-api/api/v1alpha2"
-	capimachine "sigs.k8s.io/cluster-api/controllers"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"k8s.io/klog/klogr"
+	infrav1 "sigs.k8s.io/cluster-api-provider-baremetal/api/v1alpha2"
+	"sigs.k8s.io/cluster-api-provider-baremetal/controllers"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha2"
+	ctrl "sigs.k8s.io/controller-runtime"
+	// +kubebuilder:scaffold:imports
 )
+
+var (
+	myscheme = runtime.NewScheme()
+	setupLog = ctrl.Log.WithName("setup")
+)
+
+func init() {
+	_ = scheme.AddToScheme(myscheme)
+	_ = infrav1.AddToScheme(myscheme)
+	_ = clusterv1.AddToScheme(myscheme)
+	// +kubebuilder:scaffold:scheme
+}
 
 func main() {
 	klog.InitFlags(nil)
-
-	watchNamespace := flag.String("namespace", "", "Namespace that the controller watches to reconcile machine-api objects. If unspecified, the controller watches for machine-api objects across all namespaces.")
-	metricsAddr := flag.String("metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	var metricsAddr string
+	var enableLeaderElection bool
+	var syncPeriod time.Duration
+	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
+		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	flag.DurationVar(&syncPeriod, "sync-period", 10*time.Minute,
+		"The minimum interval at which watched resources are reconciled (e.g. 15m)")
 	flag.Parse()
 
-	log := logf.Log.WithName("baremetal-controller-manager")
-	logf.SetLogger(logf.ZapLogger(false))
-	entryLog := log.WithName("entrypoint")
+	ctrl.SetLogger(klogr.New())
 
-	cfg := config.GetConfigOrDie()
-	if cfg == nil {
-		panic(fmt.Errorf("GetConfigOrDie didn't die"))
-	}
-
-	err := waitForAPIs(cfg)
-	if err != nil {
-		entryLog.Error(err, "unable to discover required APIs")
-		os.Exit(1)
-	}
-
-	// Setup a Manager
-	opts := manager.Options{
-		MetricsBindAddress: *metricsAddr,
-	}
-	if *watchNamespace != "" {
-		opts.Namespace = *watchNamespace
-		klog.Infof("Watching machine-api objects only in namespace %q for reconciliation.", opts.Namespace)
-	}
-
-	mgr, err := manager.New(cfg, opts)
-	if err != nil {
-		entryLog.Error(err, "unable to set up overall controller manager")
-		os.Exit(1)
-	}
-
-	machineActuator, err := machine.NewActuator(machine.ActuatorParams{
-		Client: mgr.GetClient(),
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		Scheme:             myscheme,
+		MetricsBindAddress: metricsAddr,
+		LeaderElection:     enableLeaderElection,
+		SyncPeriod:         &syncPeriod,
 	})
 	if err != nil {
-		panic(err)
-	}
-
-	if err := capbm.AddToScheme(mgr.GetScheme()); err != nil {
-		panic(err)
-	}
-
-	if err := clusterapis.AddToScheme(mgr.GetScheme()); err != nil {
-		panic(err)
-	}
-
-	if err := bmoapis.AddToScheme(mgr.GetScheme()); err != nil {
-		panic(err)
-	}
-
-	// the manager wrapper will add an extra Watch to the controller
-	capimachine.AddWithActuator(wrapper.New(mgr), machineActuator)
-
-	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		entryLog.Error(err, "unable to run manager")
+		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-}
 
-func waitForAPIs(cfg *rest.Config) error {
-	log := logf.Log.WithName("baremetal-controller-manager")
-
-	c, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return err
+	if err := (&controllers.BareMetalMachineReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("BareMetalMachine"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "reconciler")
+		os.Exit(1)
 	}
 
-	metal3GV := schema.GroupVersion{
-		Group:   "metal3.io",
-		Version: "v1alpha1",
+	if err = (&controllers.BareMetalClusterReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("BareMetalCluster"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "BareMetalCluster")
+		os.Exit(1)
 	}
+	// +kubebuilder:scaffold:builder
 
-	for {
-		err = discovery.ServerSupportsVersion(c, metal3GV)
-		if err != nil {
-			log.Info(fmt.Sprintf("Waiting for API group %v to be available: %v", metal3GV, err))
-			time.Sleep(time.Second * 10)
-			continue
-		}
-		log.Info(fmt.Sprintf("Found API group %v", metal3GV))
-		break
+	setupLog.Info("starting manager")
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		setupLog.Error(err, "problem running manager")
+		os.Exit(1)
 	}
-
-	return nil
 }
