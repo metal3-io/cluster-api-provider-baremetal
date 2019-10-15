@@ -63,6 +63,8 @@ func main() {
 	// Setup a Manager
 	opts := manager.Options{
 		MetricsBindAddress: *metricsAddr,
+		LeaderElection:     true,
+		LeaderElectionID:   "controller-leader-election-capbm",
 	}
 	if *watchNamespace != "" {
 		opts.Namespace = *watchNamespace
