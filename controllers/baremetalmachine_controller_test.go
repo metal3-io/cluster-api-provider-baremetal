@@ -32,9 +32,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/klogr"
 	"k8s.io/utils/pointer"
-	infrav1 "sigs.k8s.io/cluster-api-provider-baremetal/api/v1alpha2"
 	"sigs.k8s.io/cluster-api-provider-baremetal/baremetal"
 	baremetal_mocks "sigs.k8s.io/cluster-api-provider-baremetal/baremetal/mocks"
+	infrav1 "sigs.k8s.io/cluster-api-provider-baremetal/api/v1alpha3"
+	"sigs.k8s.io/cluster-api-provider-baremetal/baremetal"
+	capi "sigs.k8s.io/cluster-api/api/v1alpha3"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 )
@@ -59,6 +62,7 @@ func setReconcileNormalExpectations(ctrl *gomock.Controller,
 
 	m.EXPECT().SetFinalizer()
 
+<<<<<<< HEAD
 	// provisioned, we should only call Update, nothing else
 	m.EXPECT().IsProvisioned().Return(tc.Provisioned)
 	if tc.Provisioned {
@@ -68,6 +72,45 @@ func setReconcileNormalExpectations(ctrl *gomock.Controller,
 		m.EXPECT().GetBaremetalHostID(context.TODO()).MaxTimes(0)
 		return m
 	}
+=======
+	//Given owner cluster infra not ready, it should wait and not return error
+	It("Should not return an error when owner Cluster infrastructure is not ready", func() {
+		cluster1 := newCluster(clusterName)
+		baremetalMachine := &infrav1.BareMetalMachine{
+			TypeMeta: metav1.TypeMeta{},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bareMetalMachineName,
+				Namespace: namespaceName,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: clusterv1.GroupVersion.String(),
+						Kind:       "Machine",
+						Name:       machineName,
+					},
+				},
+			},
+			Spec:   infrav1.BareMetalMachineSpec{},
+			Status: infrav1.BareMetalMachineStatus{},
+		}
+		m := &clusterv1.Machine{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      machineName,
+				Namespace: namespaceName,
+				Labels: map[string]string{
+					clusterv1.ClusterLabelName: clusterName,
+				},
+			},
+			Spec: clusterv1.MachineSpec{
+				InfrastructureRef: v1.ObjectReference{
+					Name:       baremetalMachine.Name,
+					Namespace:  baremetalMachine.Namespace,
+					Kind:       baremetalMachine.Kind,
+					APIVersion: baremetalMachine.GroupVersionKind().GroupVersion().String(),
+				},
+			},
+		}
+		c := fake.NewFakeClientWithScheme(setupScheme(), m, baremetalMachine, cluster1)
+>>>>>>> Update to v1alpha3 and Kubernetes 1.16.2
 
 	// Bootstrap data not ready, we'll requeue, not call anything else
 	m.EXPECT().IsBootstrapReady().Return(!tc.BootstrapNotReady)
@@ -133,10 +176,50 @@ func setReconcileNormalExpectations(ctrl *gomock.Controller,
 			MaxTimes(0)
 	}
 
+<<<<<<< HEAD
 	// last call
 	m.EXPECT().Update(context.TODO())
 	return m
 }
+=======
+	//Given owner cluster infra is ready and BMCluster does not exist, it should not return an error
+	It("Should not return an error when owner Cluster infrastructure is ready and BMCluster does not exist", func() {
+
+		baremetalMachine := &infrav1.BareMetalMachine{
+			TypeMeta: metav1.TypeMeta{},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bareMetalMachineName,
+				Namespace: namespaceName,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: clusterv1.GroupVersion.String(),
+						Kind:       "Machine",
+						Name:       machineName,
+					},
+				},
+			},
+			Spec:   infrav1.BareMetalMachineSpec{},
+			Status: infrav1.BareMetalMachineStatus{},
+		}
+		m := &clusterv1.Machine{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      machineName,
+				Namespace: namespaceName,
+				Labels: map[string]string{
+					clusterv1.ClusterLabelName: clusterName,
+				},
+			},
+			Spec: clusterv1.MachineSpec{
+				InfrastructureRef: v1.ObjectReference{
+					Name:       baremetalMachine.Name,
+					Namespace:  baremetalMachine.Namespace,
+					Kind:       baremetalMachine.Kind,
+					APIVersion: baremetalMachine.GroupVersionKind().GroupVersion().String(),
+				},
+			},
+		}
+		c := fake.NewFakeClientWithScheme(setupScheme(), m, baremetalMachine, RefTestCluster)
+>>>>>>> Update to v1alpha3 and Kubernetes 1.16.2
 
 type reconcileDeleteTestCase struct {
 	ExpectError   bool
@@ -169,7 +252,47 @@ func setReconcileDeleteExpectations(ctrl *gomock.Controller,
 
 var _ = Describe("BareMetalMachine manager", func() {
 
+<<<<<<< HEAD
 	Describe("Test MachineReconcileNormal", func() {
+=======
+	//Given owner cluster infra is ready and BMCluster exists, it should not return an error
+	It("Should not return an error when owner Cluster infrastructure is ready and BMCluster exist", func() {
+
+		baremetalMachine := &infrav1.BareMetalMachine{
+			TypeMeta: metav1.TypeMeta{},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bareMetalMachineName,
+				Namespace: namespaceName,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: clusterv1.GroupVersion.String(),
+						Kind:       "Machine",
+						Name:       machineName,
+					},
+				},
+			},
+			Spec:   infrav1.BareMetalMachineSpec{},
+			Status: infrav1.BareMetalMachineStatus{},
+		}
+		m := &clusterv1.Machine{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      machineName,
+				Namespace: namespaceName,
+				Labels: map[string]string{
+					clusterv1.ClusterLabelName: clusterName,
+				},
+			},
+			Spec: clusterv1.MachineSpec{
+				InfrastructureRef: v1.ObjectReference{
+					Name:       baremetalMachine.Name,
+					Namespace:  baremetalMachine.Namespace,
+					Kind:       baremetalMachine.Kind,
+					APIVersion: baremetalMachine.GroupVersionKind().GroupVersion().String(),
+				},
+			},
+		}
+		c := fake.NewFakeClientWithScheme(setupScheme(), m, baremetalMachine, RefTestCluster, RefTestBareMetalCluster)
+>>>>>>> Update to v1alpha3 and Kubernetes 1.16.2
 
 		var gomockCtrl *gomock.Controller
 		var bmReconcile *BareMetalMachineReconciler
@@ -252,7 +375,63 @@ var _ = Describe("BareMetalMachine manager", func() {
 		)
 	})
 
+<<<<<<< HEAD
 	Describe("Test MachineReconcileDelete", func() {
+=======
+	//Given deletion timestamp, delete is reconciled
+	It("Should not return an error and finish deletion of BareMetalMachine", func() {
+
+		baremetalMachine := &infrav1.BareMetalMachine{
+			TypeMeta: metav1.TypeMeta{},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bareMetalMachineName,
+				Namespace: namespaceName,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: clusterv1.GroupVersion.String(),
+						Kind:       "Machine",
+						Name:       machineName,
+					},
+				},
+			},
+			Spec: infrav1.BareMetalMachineSpec{
+				UserData: &corev1.SecretReference{
+					Name:      bareMetalMachineName + "-user-data",
+					Namespace: namespaceName,
+				},
+			},
+			Status: infrav1.BareMetalMachineStatus{},
+		}
+		m := &clusterv1.Machine{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      machineName,
+				Namespace: namespaceName,
+				Labels: map[string]string{
+					clusterv1.ClusterLabelName: clusterName,
+				},
+			},
+			Spec: clusterv1.MachineSpec{
+				InfrastructureRef: v1.ObjectReference{
+					Name:       baremetalMachine.Name,
+					Namespace:  baremetalMachine.Namespace,
+					Kind:       baremetalMachine.Kind,
+					APIVersion: baremetalMachine.GroupVersionKind().GroupVersion().String(),
+				},
+			},
+		}
+		machineSecret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Secret",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      bareMetalMachineName + "-user-data",
+				Namespace: namespaceName,
+			},
+
+			Type: "Opaque",
+		}
+>>>>>>> Update to v1alpha3 and Kubernetes 1.16.2
 
 		var gomockCtrl *gomock.Controller
 		var bmReconcile *BareMetalMachineReconciler
@@ -440,3 +619,73 @@ var _ = Describe("BareMetalMachine manager", func() {
 	)
 
 })
+<<<<<<< HEAD
+=======
+
+func contains(haystack []string, needle string) bool {
+	for _, straw := range haystack {
+		if straw == needle {
+			return true
+		}
+	}
+	return false
+}
+
+func newCluster(clusterName string) *clusterv1.Cluster {
+	return &clusterv1.Cluster{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      clusterName,
+			Namespace: namespaceName,
+		},
+	}
+}
+
+func newBareMetalCluster(clusterName, baremetalName string) *infrav1.BareMetalCluster {
+	return &infrav1.BareMetalCluster{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: baremetalName,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: clusterv1.GroupVersion.String(),
+					Kind:       "Cluster",
+					Name:       clusterName,
+				},
+			},
+		},
+	}
+}
+
+func newMachine(clusterName, machineName string, baremetalMachine *infrav1.BareMetalMachine) *clusterv1.Machine {
+	machine := &clusterv1.Machine{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      machineName,
+			Namespace: namespaceName,
+			Labels: map[string]string{
+				clusterv1.ClusterLabelName: clusterName,
+			},
+		},
+	}
+	if baremetalMachine != nil {
+		machine.Spec.InfrastructureRef = v1.ObjectReference{
+			Name:       baremetalMachine.Name,
+			Namespace:  baremetalMachine.Namespace,
+			Kind:       baremetalMachine.Kind,
+			APIVersion: baremetalMachine.GroupVersionKind().GroupVersion().String(),
+		}
+	}
+	return machine
+}
+
+func newBareMetalMachine(name string) *infrav1.BareMetalMachine {
+	return &infrav1.BareMetalMachine{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec:   infrav1.BareMetalMachineSpec{},
+		Status: infrav1.BareMetalMachineStatus{},
+	}
+}
+>>>>>>> Update to v1alpha3 and Kubernetes 1.16.2

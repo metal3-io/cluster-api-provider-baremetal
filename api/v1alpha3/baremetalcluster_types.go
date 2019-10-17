@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha2
+package v1alpha3
 
 import (
 	"fmt"
 	"net/url"
-	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	capierrors "sigs.k8s.io/cluster-api/errors"
@@ -33,18 +32,7 @@ const (
 
 // BareMetalClusterSpec defines the desired state of BareMetalCluster.
 type BareMetalClusterSpec struct {
-	APIEndpoint     string `json:"apiEndpoint"`
-	NoCloudProvider bool   `json:"noCloudProvider,omitempty"`
-}
-
-// APIEndPointError represents error in the APIEndPoint in BareMetalCluster.Spec
-type APIEndPointError struct {
-	Message string
-}
-
-// Error implements the error interface and returns the error message
-func (e *APIEndPointError) Error() string {
-	return fmt.Sprintf("APIEndPoint is not valid, %s", e.Message)
+	APIEndpoint string `json:"apiEndpoint"`
 }
 
 // IsValid returns an error if the object is not valid, otherwise nil. The
@@ -55,19 +43,11 @@ func (s *BareMetalClusterSpec) IsValid() error {
 		missing = append(missing, "APIEndpoint")
 	}
 	if len(missing) > 0 {
-		return &APIEndPointError{fmt.Sprintf("Missing fields from Spec: %s", missing)}
+		return fmt.Errorf("Missing fields from Spec: %v", missing)
 	}
 	u, err := url.Parse(s.APIEndpoint)
-
 	if err != nil || u.Hostname() == "" {
-		return &APIEndPointError{"Incorrect API endpoint, expecting [scheme:]//host[:port]"}
-	}
-
-	if u.Port() != "" {
-		_, err = strconv.Atoi(u.Port())
-		if err != nil {
-			return &APIEndPointError{"Invalid Port"}
-		}
+		return fmt.Errorf("Incorrect API endpoint, expecting [scheme:]//host[:port]")
 	}
 	return nil
 }
@@ -128,12 +108,10 @@ type BareMetalClusterStatus struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:resource:path=baremetalclusters,scope=Namespaced,categories=cluster-api,shortName=bmc;bmcluster
+// +kubebuilder:resource:path=baremetalclusters,scope=Namespaced,categories=cluster-api
+// +kubebuilder:storageversion
 // +kubebuilder:subresource:status
 // +kubebuilder:object:root=true
-// +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.ready",description="BaremetalCluster is Ready"
-// +kubebuilder:printcolumn:name="Error",type="string",JSONPath=".status.errorReason",description="Most recent error"
-// +kubebuilder:printcolumn:name="APIEndpoints",type="string",JSONPath=".status.apiEndpoints",description="API endpoints"
 
 // BareMetalCluster is the Schema for the baremetalclusters API
 type BareMetalCluster struct {
