@@ -18,7 +18,6 @@ package baremetal
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -197,7 +196,7 @@ func (mgr *MachineManager) Create(ctx context.Context) (string, error) {
 		mgr.Log.Info("Machine already associated with host", "host", host.Name)
 	}
 
-	err = mgr.mergeUserData(ctx)
+	err = mgr.mergeUserData(ctx, host)
 	if err != nil {
 		return providerID, err
 	}
@@ -219,59 +218,6 @@ func (mgr *MachineManager) Create(ctx context.Context) (string, error) {
 
 	mgr.Log.Info("Finished creating machine")
 	return providerID, nil
-}
-
-// Merge the UserData from the machine and the user
-func (mgr *MachineManager) mergeUserData(ctx context.Context) error {
-	if mgr.Machine.Spec.Bootstrap.Data != nil {
-		decodedUserDataBytes, err := base64.StdEncoding.DecodeString(*mgr.Machine.Spec.Bootstrap.Data)
-		decodedUserData := string(decodedUserDataBytes)
-		if err != nil {
-			return err
-		}
-
-		bootstrapSecret := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Secret",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      mgr.Machine.Name + "-user-data",
-				Namespace: mgr.Machine.Namespace,
-			},
-			Data: map[string][]byte{
-				"userData": []byte(decodedUserData),
-			},
-			Type: "Opaque",
-		}
-
-		tmpBootstrapSecret := corev1.Secret{}
-		key := client.ObjectKey{
-			Name:      mgr.Machine.Name + "-user-data",
-			Namespace: mgr.Machine.Namespace,
-		}
-		err = mgr.client.Get(ctx, key, &tmpBootstrapSecret)
-		if errors.IsNotFound(err) {
-			// Create the secret with use data
-			err = mgr.client.Create(ctx, bootstrapSecret)
-		} else if err != nil {
-			return err
-		} else {
-			// Update the secret with use data
-			err = mgr.client.Update(ctx, bootstrapSecret)
-		}
-
-		if err != nil {
-			mgr.Log.Info("Unable to create secret for bootstrap")
-			return err
-		}
-		mgr.BareMetalMachine.Spec.UserData = &corev1.SecretReference{
-			Name:      mgr.Machine.Name + "-user-data",
-			Namespace: mgr.Machine.Namespace,
-		}
-
-	}
-	return nil
 }
 
 // Delete deletes a machine and is invoked by the Machine Controller
@@ -542,14 +488,14 @@ func (mgr *MachineManager) setHostSpec(ctx context.Context, host *bmh.BareMetalH
 	// upgrades are not supported at this time. To re-provision a
 	// host, we must fully deprovision it and then provision it again.
 	// Not provisioning while we do not have the UserData
-	if host.Spec.Image == nil && mgr.BareMetalMachine.Spec.UserData != nil {
+	if host.Spec.Image == nil && mgr.BareMetalMachine.Status.UserData != nil {
 		host.Spec.Image = &bmh.Image{
 			URL:      mgr.BareMetalMachine.Spec.Image.URL,
 			Checksum: mgr.BareMetalMachine.Spec.Image.Checksum,
 		}
-		host.Spec.UserData = mgr.BareMetalMachine.Spec.UserData
+		host.Spec.UserData = mgr.BareMetalMachine.Status.UserData
 		if host.Spec.UserData != nil && host.Spec.UserData.Namespace == "" {
-			host.Spec.UserData.Namespace = mgr.Machine.Namespace
+			host.Spec.UserData.Namespace = mgr.BareMetalMachine.Namespace
 		}
 	}
 

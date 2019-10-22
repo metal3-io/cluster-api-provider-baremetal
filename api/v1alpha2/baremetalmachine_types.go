@@ -42,11 +42,13 @@ type BareMetalMachineSpec struct {
 	// UserData references the Secret that holds user data needed by the bare metal
 	// operator. The Namespace is optional; it will default to the Machine's
 	// namespace if not specified.
-	UserData *corev1.SecretReference `json:"userData,omitempty"`
+	// +optional
+	UserData *UserDataInput `json:"userData,omitempty"`
 
 	// HostSelector specifies matching criteria for labels on BareMetalHosts.
 	// This is used to limit the set of BareMetalHost objects considered for
 	// claiming for a Machine.
+	// +optional
 	HostSelector HostSelector `json:"hostSelector,omitempty"`
 }
 
@@ -59,6 +61,21 @@ func (s *BareMetalMachineSpec) IsValid() error {
 	}
 	if s.Image.Checksum == "" {
 		missing = append(missing, "Image.Checksum")
+	}
+	if s.UserData != nil {
+		if s.UserData.Type == "" {
+			missing = append(missing, "UserData.Type")
+		}
+		if s.UserData.UserDataAppend != nil {
+			if s.UserData.UserDataAppend.Name == "" {
+				missing = append(missing, "UserData.UserDataAppend.Name")
+			}
+		}
+		if s.UserData.UserDataPrepend != nil {
+			if s.UserData.UserDataPrepend.Name == "" {
+				missing = append(missing, "UserData.UserDataPrepend.Name")
+			}
+		}
 	}
 	if len(missing) > 0 {
 		return fmt.Errorf("Missing fields from ProviderSpec: %v", missing)
@@ -76,6 +93,32 @@ type BareMetalMachineStatus struct {
 	// it, under what circumstances the value changes, etc."
 	// +optional
 	Ready bool `json:"ready"`
+
+	// UserData references the Secret that holds user data needed by the bare metal
+	// operator. The Namespace is optional; it will default to the Machine's
+	// namespace if not specified.
+	// +optional
+	UserData *corev1.SecretReference `json:"userData,omitempty"`
+}
+
+// UserDataInput contains the userdata given by the user as a secret and
+// the type and strategy of merge.
+type UserDataInput struct {
+	//Type is the type of userdata
+	// +kubebuilder:validation:Enum=cloud-init
+	Type string `json:"type"`
+
+	// UserDataAppend references the Secret that holds user data that will be
+	// appended to the CABPK output. The Namespace is optional; it will default to
+	// the Machine's namespace if not specified.
+	// +optional
+	UserDataAppend *corev1.SecretReference `json:"userDataAppend,omitempty"`
+
+	// UserDataPrepend references the Secret that holds user data that will be
+	// prepended to the CABPK output. The Namespace is optional; it will default to
+	// the Machine's namespace if not specified.
+	// +optional
+	UserDataPrepend *corev1.SecretReference `json:"userDataPrepend,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

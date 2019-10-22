@@ -43,8 +43,11 @@ func TestSpecIsValid(t *testing.T) {
 					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
 					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
 				},
-				UserData: &corev1.SecretReference{
-					Name: "worker-user-data",
+				UserData: &UserDataInput{
+					Type: "cloud-init",
+					UserDataAppend: &corev1.SecretReference{
+						Name: "worker-user-data",
+					},
 				},
 			},
 			ErrorExpected: false,
@@ -56,9 +59,12 @@ func TestSpecIsValid(t *testing.T) {
 					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
 					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
 				},
-				UserData: &corev1.SecretReference{
-					Name:      "worker-user-data",
-					Namespace: "otherns",
+				UserData: &UserDataInput{
+					Type: "cloud-init",
+					UserDataAppend: &corev1.SecretReference{
+						Name:      "worker-user-data",
+						Namespace: "otherns",
+					},
 				},
 			},
 			ErrorExpected: false,
@@ -69,8 +75,11 @@ func TestSpecIsValid(t *testing.T) {
 				Image: Image{
 					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
 				},
-				UserData: &corev1.SecretReference{
-					Name: "worker-user-data",
+				UserData: &UserDataInput{
+					Type: "cloud-init",
+					UserDataAppend: &corev1.SecretReference{
+						Name: "worker-user-data",
+					},
 				},
 			},
 			ErrorExpected: true,
@@ -81,8 +90,11 @@ func TestSpecIsValid(t *testing.T) {
 				Image: Image{
 					URL: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
 				},
-				UserData: &corev1.SecretReference{
-					Name: "worker-user-data",
+				UserData: &UserDataInput{
+					Type: "cloud-init",
+					UserDataAppend: &corev1.SecretReference{
+						Name: "worker-user-data",
+					},
 				},
 			},
 			ErrorExpected: true,
@@ -98,19 +110,129 @@ func TestSpecIsValid(t *testing.T) {
 			ErrorExpected: false,
 			Name:          "missing optional UserData",
 		},
+
 		{
 			Spec: BareMetalMachineSpec{
 				Image: Image{
 					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
 					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
 				},
-				UserData: &corev1.SecretReference{
-					Namespace: "otherns",
+				UserData: &UserDataInput{
+					Type: "cloud-init",
+					UserDataAppend: &corev1.SecretReference{
+						Namespace: "otherns",
+					},
+				},
+			},
+			ErrorExpected: true,
+			Name:          "missing UserData.UserDataAppend.Name",
+		},
+		{
+			Spec: BareMetalMachineSpec{
+				Image: Image{
+					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
+					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
+				},
+				UserData: &UserDataInput{
+					UserDataAppend: &corev1.SecretReference{
+						Namespace: "otherns",
+					},
+				},
+			},
+			ErrorExpected: true,
+			Name:          "missing UserData.UserDataAppend.Type",
+		},
+		{
+			Spec: BareMetalMachineSpec{
+				Image: Image{
+					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
+					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
+				},
+				UserData: &UserDataInput{
+					Type: "abcd",
+					UserDataAppend: &corev1.SecretReference{
+						Namespace: "otherns",
+					},
+				},
+			},
+			ErrorExpected: true,
+			Name:          "wrong UserData.UserDataAppend.Type",
+		},
+		{
+			Spec: BareMetalMachineSpec{
+				Image: Image{
+					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
+					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
+				},
+				UserData: &UserDataInput{
+					Type: "cloud-init",
 				},
 			},
 			ErrorExpected: false,
-			Name:          "missing optional UserData.Name",
+			Name:          "missing UserData.UserDataAppend and UserData.UserDataPrepend",
 		},
+
+		{
+			Spec: BareMetalMachineSpec{
+				Image: Image{
+					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
+					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
+				},
+				UserData: &UserDataInput{
+					Type: "cloud-init",
+					UserDataPrepend: &corev1.SecretReference{
+						Namespace: "otherns",
+					},
+				},
+			},
+			ErrorExpected: true,
+			Name:          "missing UserData.UserDataPrepend.Name",
+		},
+		{
+			Spec: BareMetalMachineSpec{
+				Image: Image{
+					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
+					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
+				},
+				UserData: &UserDataInput{
+					UserDataPrepend: &corev1.SecretReference{
+						Namespace: "otherns",
+					},
+				},
+			},
+			ErrorExpected: true,
+			Name:          "missing UserData.UserDataPrepend.Type",
+		},
+		{
+			Spec: BareMetalMachineSpec{
+				Image: Image{
+					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
+					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
+				},
+				UserData: &UserDataInput{
+					Type: "abcd",
+					UserDataPrepend: &corev1.SecretReference{
+						Namespace: "otherns",
+					},
+				},
+			},
+			ErrorExpected: true,
+			Name:          "wrong UserData.UserDataPrepend.Type",
+		},
+		{
+			Spec: BareMetalMachineSpec{
+				Image: Image{
+					URL:      "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2",
+					Checksum: "http://172.22.0.1/images/rhcos-ootpa-latest.qcow2.md5sum",
+				},
+				UserData: &UserDataInput{
+					Type: "cloud-init",
+				},
+			},
+			ErrorExpected: false,
+			Name:          "missing UserData.UserDataAppend and UserData.UserDataPrepend",
+		},
+
 		{
 			Spec: BareMetalMachineSpec{
 				Image: Image{
@@ -173,8 +295,11 @@ func TestStorageBareMetalMachineSpec(t *testing.T) {
 			Namespace: "default",
 		},
 		Spec: BareMetalMachineSpec{
-			UserData: &corev1.SecretReference{
-				Name: "foo",
+			UserData: &UserDataInput{
+				Type: "cloud-init",
+				UserDataAppend: &corev1.SecretReference{
+					Name: "foo",
+				},
 			},
 		},
 	}

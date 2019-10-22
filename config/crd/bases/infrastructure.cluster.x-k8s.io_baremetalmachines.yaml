@@ -99,14 +99,43 @@ spec:
                 by the bare metal operator. The Namespace is optional; it will default
                 to the Machine's namespace if not specified.
               properties:
-                name:
-                  description: Name is unique within a namespace to reference a secret
-                    resource.
+                type:
+                  description: Type is the type of userdata
+                  enum:
+                  - cloud-init
                   type: string
-                namespace:
-                  description: Namespace defines the space within which the secret
-                    name must be unique.
-                  type: string
+                userDataAppend:
+                  description: UserDataAppend references the Secret that holds user
+                    data that will be appended to the CABPK output. The Namespace
+                    is optional; it will default to the Machine's namespace if not
+                    specified.
+                  properties:
+                    name:
+                      description: Name is unique within a namespace to reference
+                        a secret resource.
+                      type: string
+                    namespace:
+                      description: Namespace defines the space within which the secret
+                        name must be unique.
+                      type: string
+                  type: object
+                userDataPrepend:
+                  description: UserDataPrepend references the Secret that holds user
+                    data that will be prepended to the CABPK output. The Namespace
+                    is optional; it will default to the Machine's namespace if not
+                    specified.
+                  properties:
+                    name:
+                      description: Name is unique within a namespace to reference
+                        a secret resource.
+                      type: string
+                    namespace:
+                      description: Namespace defines the space within which the secret
+                        name must be unique.
+                      type: string
+                  type: object
+              required:
+              - type
               type: object
           required:
           - image
@@ -218,6 +247,20 @@ spec:
                 variable : mhrivnak: " it would be good to document what this means,
                 how to interpret it, under what circumstances the value changes, etc."'
               type: boolean
+            userData:
+              description: UserData references the Secret that holds user data needed
+                by the bare metal operator. The Namespace is optional; it will default
+                to the Machine's namespace if not specified.
+              properties:
+                name:
+                  description: Name is unique within a namespace to reference a secret
+                    resource.
+                  type: string
+                namespace:
+                  description: Namespace defines the space within which the secret
+                    name must be unique.
+                  type: string
+              type: object
             version:
               description: Version specifies the current version of Kubernetes running
                 on the corresponding Node. This is meant to be a means of bubbling

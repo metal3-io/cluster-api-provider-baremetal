@@ -22,6 +22,7 @@ require (
 	golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 // indirect
 	golang.org/x/tools v0.0.0-20191017101817-846f856e7d71 // indirect
 	google.golang.org/appengine v1.6.1 // indirect
+	gopkg.in/yaml.v2 v2.2.2
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
