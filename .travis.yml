@@ -1,17 +1,11 @@
 language: go
-
-services:
-  - docker
-
+sudo: false
+go:
+  - "1.12"
+before_install:
+  - make generate
 env:
-  global:
-    - CONTAINER_RUNTIME=docker
-  jobs:
-    - TARGET=unit
-    - TARGET=shellcheck
-    - TARGET=markdownlint
-    - TARGET=govet
-    - TARGET=gofmt
-
-script:
-- ./hack/${TARGET}.sh
+  - TARGET=fmt
+  - TARGET=vet
+  - TARGET=unit
+script: KUBEBUILDER_ASSETS="$(pwd)/hack/tools/bin/" make $TARGET
