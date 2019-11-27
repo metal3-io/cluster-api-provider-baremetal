@@ -107,7 +107,7 @@ func (a *Actuator) Create(ctx context.Context, cluster *machinev1.Cluster, machi
 
 	// none found, so try to choose one
 	if host == nil {
-		host, err = a.chooseHost(ctx, machine, config)
+		host, err = a.chooseHost(ctx, machine)
 		if err != nil {
 			return err
 		}
@@ -285,12 +285,41 @@ func (a *Actuator) getHost(ctx context.Context, machine *machinev1.Machine) (*bm
 	return &host, nil
 }
 
+// SelectorFromProviderSpec returns a selector that can be used to determine if
+// a BareMetalHost matches a Machine.
+func SelectorFromProviderSpec(providerspec *machinev1.ProviderSpec) (labels.Selector, error) {
+	config, err := configFromProviderSpec(*providerspec)
+	if err != nil {
+		log.Printf("Error reading ProviderSpec: %s", err.Error())
+		return nil, err
+	}
+	selector := labels.NewSelector()
+	var reqs labels.Requirements
+	for labelKey, labelVal := range config.HostSelector.MatchLabels {
+		r, err := labels.NewRequirement(labelKey, selection.Equals, []string{labelVal})
+		if err != nil {
+			log.Printf("Failed to create MatchLabel requirement: %v", err)
+			return nil, err
+		}
+		reqs = append(reqs, *r)
+	}
+	for _, req := range config.HostSelector.MatchExpressions {
+		lowercaseOperator := selection.Operator(strings.ToLower(string(req.Operator)))
+		r, err := labels.NewRequirement(req.Key, lowercaseOperator, req.Values)
+		if err != nil {
+			log.Printf("Failed to create MatchExpression requirement: %v", err)
+			return nil, err
+		}
+		reqs = append(reqs, *r)
+	}
+	selector = selector.Add(reqs...)
+	return selector, nil
+}
+
 // chooseHost iterates through known hosts and returns one that can be
 // associated with the machine. It searches all hosts in case one already has an
 // association with this machine.
-func (a *Actuator) chooseHost(ctx context.Context, machine *machinev1.Machine,
-	config *bmv1alpha1.BareMetalMachineProviderSpec) (*bmh.BareMetalHost, error) {
-
+func (a *Actuator) chooseHost(ctx context.Context, machine *machinev1.Machine) (*bmh.BareMetalHost, error) {
 	// get list of BMH
 	hosts := bmh.BareMetalHostList{}
 	opts := &client.ListOptions{
@@ -304,31 +333,12 @@ func (a *Actuator) chooseHost(ctx context.Context, machine *machinev1.Machine,
 
 	// Using the label selector on ListOptions above doesn't seem to work.
 	// I think it's because we have a local cache of all BareMetalHosts.
-	labelSelector := labels.NewSelector()
-	var reqs labels.Requirements
-	for labelKey, labelVal := range config.HostSelector.MatchLabels {
-		log.Printf("Adding requirement to match label: '%s' == '%s'", labelKey, labelVal)
-		r, err := labels.NewRequirement(labelKey, selection.Equals, []string{labelVal})
-		if err != nil {
-			log.Printf("Failed to create MatchLabel requirement, not choosing host: %v", err)
-			return nil, err
-		}
-		reqs = append(reqs, *r)
+	labelSelector, err := SelectorFromProviderSpec(&machine.Spec.ProviderSpec)
+	if err != nil {
+		return nil, err
 	}
-	for _, req := range config.HostSelector.MatchExpressions {
-		log.Printf("Adding requirement to match label: '%s' %s '%s'", req.Key, req.Operator, req.Values)
-		lowercaseOperator := selection.Operator(strings.ToLower(string(req.Operator)))
-		r, err := labels.NewRequirement(req.Key, lowercaseOperator, req.Values)
-		if err != nil {
-			log.Printf("Failed to create MatchExpression requirement, not choosing host: %v", err)
-			return nil, err
-		}
-		reqs = append(reqs, *r)
-	}
-	labelSelector = labelSelector.Add(reqs...)
 
 	availableHosts := []*bmh.BareMetalHost{}
-
 	for i, host := range hosts.Items {
 		if host.Available() {
 			if labelSelector.Matches(labels.Set(host.ObjectMeta.Labels)) {

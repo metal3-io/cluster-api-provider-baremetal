@@ -49,18 +49,15 @@ rules:
   - update
   - patch
 - apiGroups:
-  - baremetal.cluster.k8s.io
+  - cluster.k8s.io
   resources:
-  - baremetalmachineproviderspecs
-  - baremetalmachineproviderstatuses
+  - machinesets
   verbs:
   - get
   - list
   - watch
-  - create
   - update
   - patch
-  - delete
 - apiGroups:
   - admissionregistration.k8s.io
   resources:

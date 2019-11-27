@@ -20,3 +20,9 @@ For more information about this actuator and related repositories, see
 
 See the [API Documentation](docs/api.md) for details about the `providerSpec`
 API used with this `cluster-api` provider.
+
+## MachineSet Scaling
+
+If you would like a MachineSet to be automatically scaled to the number of
+matching BareMetalHosts, annotate that MachineSet with key
+`metal3.io/autoscale-to-hosts` and any value.

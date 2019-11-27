@@ -131,6 +131,7 @@ func TestChooseHost(t *testing.T) {
 			},
 			Hosts:            []runtime.Object{&host2, &host1},
 			ExpectedHostName: host2.Name,
+			Config:           config,
 		},
 		{
 			// should ignore discoveredHost and pick host2, which lacks a ConsumerRef
@@ -146,6 +147,7 @@ func TestChooseHost(t *testing.T) {
 			},
 			Hosts:            []runtime.Object{&discoveredHost, &host2, &host1},
 			ExpectedHostName: host2.Name,
+			Config:           config,
 		},
 		{
 			// should pick host3, which already has a matching ConsumerRef
@@ -164,6 +166,7 @@ func TestChooseHost(t *testing.T) {
 			},
 			Hosts:            []runtime.Object{&host1, &host3, &host2},
 			ExpectedHostName: host3.Name,
+			Config:           config,
 		},
 		{
 			// should not pick a host, because two are already taken, and the third is in
@@ -183,6 +186,7 @@ func TestChooseHost(t *testing.T) {
 			},
 			Hosts:            []runtime.Object{&host1, &host3, &host4},
 			ExpectedHostName: "",
+			Config:           config,
 		},
 		{
 			// Can choose hosts with a label, even without a label selector
@@ -201,6 +205,7 @@ func TestChooseHost(t *testing.T) {
 			},
 			Hosts:            []runtime.Object{&host_with_label},
 			ExpectedHostName: host_with_label.Name,
+			Config:           config,
 		},
 		{
 			// Choose the host with the right label
@@ -308,11 +313,13 @@ func TestChooseHost(t *testing.T) {
 		if err != nil {
 			t.Errorf("%v", err)
 		}
-		cfg := tc.Config
-		if cfg == nil {
-			cfg = config
+		pspec, err := yaml.Marshal(&tc.Config)
+		if err != nil {
+			t.Logf("could not marshal BareMetalMachineProviderSpec: %v", err)
+			t.FailNow()
 		}
-		result, err := actuator.chooseHost(context.TODO(), &tc.Machine, cfg)
+		tc.Machine.Spec.ProviderSpec = machinev1.ProviderSpec{Value: &runtime.RawExtension{Raw: pspec}}
+		result, err := actuator.chooseHost(context.TODO(), &tc.Machine)
 		if tc.ExpectedHostName == "" {
 			if result != nil {
 				t.Error("found host when none should have been available")
@@ -1535,7 +1542,7 @@ func TestNodeAddresses(t *testing.T) {
 		},
 		{
 			// no host at all, so this is a no-op
-			Host: nil,
+			Host:                  nil,
 			ExpectedNodeAddresses: nil,
 		},
 	}
