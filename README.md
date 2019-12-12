@@ -14,7 +14,7 @@ For more information about this actuator and related repositories, see
   [baremetal-operator](https://github.com/metal3-io/baremetal-operator).
 * [Setting up for tests](docs/dev/setup.md)
 * Using [Minikube](docs/dev/minikube.md)
-* Using [OpenShift 4](docs/dev/openshift.md)
+* Using [OpenShift 4](docs/dev/openshift.md).
 
 ## API
 
