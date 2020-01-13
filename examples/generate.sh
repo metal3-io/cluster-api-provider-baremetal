@@ -107,8 +107,8 @@ kustomize build ../cluster-api/config/default > "${COMPONENTS_CLUSTER_API_GENERA
 echo "Generated ${COMPONENTS_CLUSTER_API_GENERATED_FILE}"
 
 # Generate Kubeadm Bootstrap Provider components file.
-# kustomize build "github.com/kubernetes-sigs/cluster-api-bootstrap-provider-kubeadm/config/default/?ref=master" > "${COMPONENTS_KUBEADM_GENERATED_FILE}"
-# echo "Generated ${COMPONENTS_KUBEADM_GENERATED_FILE}"
+kustomize build "github.com/kubernetes-sigs/cluster-api/bootstrap/kubeadm/config/default/?ref=master" > "${COMPONENTS_KUBEADM_GENERATED_FILE}"
+echo "Generated ${COMPONENTS_KUBEADM_GENERATED_FILE}"
 
 # Generate BAREMETAL Infrastructure Provider components file.
 kustomize build "${SOURCE_DIR}/../config/default" | envsubst > "${COMPONENTS_BAREMETAL_GENERATED_FILE}"

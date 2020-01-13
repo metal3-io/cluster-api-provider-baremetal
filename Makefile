@@ -261,6 +261,10 @@ set-manifest-pull-policy:
 manifests: generate-manifests $(KUSTOMIZE)
 	$(KUSTOMIZE) build config/default \
 		-o examples/provider-components/provider-components-baremetal.yaml
+	$(KUSTOMIZE) build "github.com/kubernetes-sigs/cluster-api/bootstrap/kubeadm/config/default/?ref=master" \
+		-o examples/provider-components/provider-components-kubeadm.yaml
+	$(KUSTOMIZE) build "github.com/kubernetes-sigs/cluster-api/config/default/?ref=master" \
+
 	# JEB: Be sure to override the image in in the provider-components/kustomization.yaml
 	$(KUSTOMIZE) build "github.com/kubernetes-sigs/cluster-api/config/default/?ref=master" \
 		-o examples/provider-components/provider-components-cluster-api.yaml

@@ -8,9 +8,5 @@ spec:
     spec:
       containers:
       # Change the value of image field below to your controller image URL
-<<<<<<< HEAD
       - image: quay.io/metal3-io/cluster-api-provider-baremetal:master
-=======
-      - image: keleustes/cluster-api-provider-baremetal-amd64:v1alpha2
->>>>>>> Update to v1alpha3 and Kubernetes 1.16.2
         name: manager
