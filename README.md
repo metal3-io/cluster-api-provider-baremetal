@@ -1,5 +1,8 @@
 # Cluster API Provider for Managed Bare Metal Hardware
 
+[![Ubuntu V1alpha1 build status](https://jenkins.nordix.org/view/Airship/job/airship_master_integration_test_ubuntu/badge/icon?subject=Ubuntu%20E2E%20V1alpha1)](https://jenkins.nordix.org/view/Airship/job/airship_master_integration_test_ubuntu)
+[![CentOS V1alpha1 build status](https://jenkins.nordix.org/view/Airship/job/airship_master_integration_test_centos/badge/icon?subject=CentOS%20E2E%20V1alpha1)](https://jenkins.nordix.org/view/Airship/job/airship_master_integration_test_centos)
+
 This repository contains a Machine actuator implementation for the
 Kubernetes [Cluster API](https://github.com/kubernetes-sigs/cluster-api/).
 
