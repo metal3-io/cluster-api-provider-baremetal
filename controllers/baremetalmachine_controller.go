@@ -25,16 +25,17 @@ import (
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	capbm "sigs.k8s.io/cluster-api-provider-baremetal/api/v1alpha3"
 	"sigs.k8s.io/cluster-api-provider-baremetal/baremetal"
 	capi "sigs.k8s.io/cluster-api/api/v1alpha3"
+	capierrors "sigs.k8s.io/cluster-api/errors"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	capierrors "sigs.k8s.io/cluster-api/errors"
 )
 
 const (
@@ -109,15 +110,11 @@ func (r *BareMetalMachineReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result,
 		return ctrl.Result{}, errors.Wrapf(err, "BareMetalMachine's owner Machine is missing label or the cluster does not exist")
 	}
 	if cluster == nil {
-<<<<<<< HEAD
 		setErrorBMMachine(capbmMachine, fmt.Sprintf(
 			"The machine is NOT associated with a cluster using the label %s: <name of cluster>",
-			capi.MachineClusterLabelName,
+			capi.ClusterLabelName,
 		), capierrors.InvalidConfigurationMachineError)
-		machineLog.Info(fmt.Sprintf("The machine is NOT associated with a cluster using the label %s: <name of cluster>", capi.MachineClusterLabelName))
-=======
 		machineLog.Info(fmt.Sprintf("Please associate this machine with a cluster using the label %s: <name of cluster>", capi.ClusterLabelName))
->>>>>>> Update to v1alpha3 and Kubernetes 1.16.2
 		return ctrl.Result{}, nil
 	}
 
