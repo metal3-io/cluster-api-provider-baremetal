@@ -24,8 +24,12 @@ import (
 
 	bmoapis "github.com/metal3-io/baremetal-operator/pkg/apis"
 	"github.com/metal3-io/cluster-api-provider-baremetal/pkg/apis"
+	"github.com/metal3-io/cluster-api-provider-baremetal/pkg/baremetal/remediator"
 	"github.com/metal3-io/cluster-api-provider-baremetal/pkg/cloud/baremetal/actuators/machine"
 	"github.com/metal3-io/cluster-api-provider-baremetal/pkg/manager/wrapper"
+	"github.com/metal3-io/cluster-api-provider-baremetal/pkg/controllers"
+	"github.com/metal3-io/cluster-api-provider-baremetal/pkg/controllers/machineremediation"
+	"github.com/metal3-io/cluster-api-provider-baremetal/pkg/controllers/nodereboot"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -96,6 +100,16 @@ func main() {
 
 	// the manager wrapper will add an extra Watch to the controller
 	capimachine.AddWithActuator(wrapper.New(mgr), machineActuator)
+
+	remediator := remediator.NewBareMetalRemediator(mgr)
+	addController := func(m manager.Manager, opts manager.Options) error {
+		return machineremediation.AddWithRemediator(m, remediator, opts)
+	}
+
+	// Setup all Controllers
+	if err := controllers.AddToManager(mgr, opts, addController, nodereboot.Add); err != nil {
+		klog.Fatal(err)
+	}
 
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
 		entryLog.Error(err, "unable to run manager")
