@@ -90,7 +90,7 @@ func (bmr *BareMetalRemediator) Reboot(ctx context.Context, machineRemediation *
 				machine.Name,
 			)
 			mrCopy.Status.State = mrv1.RemediationStateSucceeded
-			mrCopy.Status.Reason = "Skip the reboot, the machine power off by an user"
+			mrCopy.Status.Reason = "Skip the reboot, the machine was powered off already"
 			mrCopy.Status.EndTime = &metav1.Time{Time: now}
 		} else {
 			if !rebootInProgress {
