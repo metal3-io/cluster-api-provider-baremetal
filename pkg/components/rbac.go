@@ -27,7 +27,7 @@ var (
 			},
 			{
 				APIGroups: []string{
-					"machineremediation.kubevirt.io",
+					"machineremediation.metal3.io",
 				},
 				Resources: []string{
 					"machineremediations",
