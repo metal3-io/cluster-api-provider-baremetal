@@ -141,7 +141,7 @@ func (bmr *BareMetalRemediator) Reboot(ctx context.Context, machineRemediation *
 
 		// host still has state on, we need to reconcile
 		if bmh.Status.PoweredOn {
-			glog.Warningf("machine %q still has power on state", machine.Name)
+			glog.Infof("machine %q still has power on state", machine.Name)
 			return nil
 		}
 
