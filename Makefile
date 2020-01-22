@@ -313,9 +313,8 @@ $(RELEASE_DIR):
 .PHONY: release
 release: clean-release  ## Builds and push container images using the latest git tag for the commit.
 	@if [ -z "${RELEASE_TAG}" ]; then echo "RELEASE_TAG is not set"; exit 1; fi
-	# Push the release image to the staging bucket first.
-	REGISTRY=$(STAGING_REGISTRY) TAG=$(RELEASE_TAG) \
-		$(MAKE) docker-build-all docker-push-all
+	git checkout "${RELEASE_TAG}"
+	
 	# Set the manifest image to the production bucket.
 	MANIFEST_IMG=$(PROD_REGISTRY)/$(IMAGE_NAME) MANIFEST_TAG=$(RELEASE_TAG) \
 		$(MAKE) set-manifest-image
@@ -331,23 +330,9 @@ release-manifests: $(RELEASE_DIR) ## Builds the manifests to publish with a rele
 .PHONY: release-binaries
 release-binaries: ## Builds the binaries to publish with a release
 
-.PHONY: release-binary
-release-binary: $(RELEASE_DIR)
-	docker run \
-		--rm \
-		-e CGO_ENABLED=0 \
-		-e GOOS=$(GOOS) \
-		-e GOARCH=$(GOARCH) \
-		-v "$$(pwd):/workspace" \
-		-w /workspace \
-		golang:1.12.9 \
-		go build -a -ldflags '-extldflags "-static"' \
-		-o $(RELEASE_DIR)/$(notdir $(RELEASE_BINARY))-$(GOOS)-$(GOARCH) $(RELEASE_BINARY)
-
 .PHONY: release-staging
 release-staging: ## Builds and push container images to the staging bucket.
 	REGISTRY=$(STAGING_REGISTRY) $(MAKE) docker-build-all docker-push-all release-tag-latest
-
 
 .PHONY: release-tag-latest
 release-tag-latest: ## Adds the latest tag to the last build tag.
