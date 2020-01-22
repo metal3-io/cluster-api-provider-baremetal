@@ -9,7 +9,7 @@ const (
 	// it will create the MachineRemediation object
 	AnnotationNodeMachineReboot = "healthchecking.openshift.io/machine-remediation-reboot"
 	// AnnotationRebootInProgress contains the annotation key, that indicates that reboot in the progress
-	AnnotationRebootInProgress = "machineremediation.kubevirt.io/rebootInProgress"
+	AnnotationRebootInProgress = "machineremediation.metal3.io/rebootInProgress"
 	//MachineRoleLabel contains machine role label
 	MachineRoleLabel = "machine.openshift.io/cluster-api-machine-role"
 	// MasterMachineHealthCheck contains the MachineHealthCheck name for master nodes
