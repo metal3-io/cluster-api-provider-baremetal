@@ -25,6 +25,7 @@ import (
 	"time"
 
 	bmh "github.com/metal3-io/baremetal-operator/pkg/apis/metal3/v1alpha1"
+	"github.com/metal3-io/baremetal-operator/pkg/utils"
 	bmv1alpha1 "github.com/metal3-io/cluster-api-provider-baremetal/pkg/apis/baremetal/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -120,6 +121,10 @@ func (a *Actuator) Create(ctx context.Context, cluster *machinev1.Cluster, machi
 		log.Printf("Machine %s already associated with host %s", machine.Name, host.Name)
 	}
 
+	// Add a finalizer for the BMH. This will allow us to delete
+	// the Machine when the BMH is deleted.
+	host.Finalizers = append(host.Finalizers, machinev1.MachineFinalizer)
+
 	err = a.setHostSpec(ctx, host, machine, config)
 	if err != nil {
 		return err
@@ -206,6 +211,35 @@ func (a *Actuator) Update(ctx context.Context, cluster *machinev1.Cluster, machi
 	}
 	if host == nil {
 		return fmt.Errorf("host not found for machine %s", machine.Name)
+	}
+
+	// Delete Machine when BareMetalHost is deleted.
+	// This is to ensure the MachineSet creates a new Machine
+	// containing the latest ProviderSpec.
+	if host.Status.Provisioning.State == "deleting" {
+		log.Print("Removing consumerRef for host: ", host.Name)
+		host.Spec.ConsumerRef = nil
+		err = a.client.Update(ctx, host)
+		if err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+
+		log.Print("Deleting machine associated with host: ", host.Name)
+		a.client.Delete(ctx, machine)
+		if err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+		log.Print("Deleted machine associated with host: ", host.Name)
+
+		log.Print("Removing finalizer for host: ", host.Name)
+		host.Finalizers = utils.FilterStringFromList(
+			host.Finalizers, machinev1.MachineFinalizer)
+		err = a.client.Update(ctx, host)
+		if err != nil && !errors.IsNotFound(err) {
+			return err
+		}
+		log.Print("Removed finalizer for host ", host.Name)
+		return nil
 	}
 
 	err = a.ensureAnnotation(ctx, machine, host)

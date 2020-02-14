@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/api/errors"
 	clusterapis "sigs.k8s.io/cluster-api/pkg/apis"
 	machinev1 "sigs.k8s.io/cluster-api/pkg/apis/cluster/v1alpha1"
 	clustererror "sigs.k8s.io/cluster-api/pkg/controller/error"
@@ -1561,6 +1562,166 @@ func TestNodeAddresses(t *testing.T) {
 		for i, address := range expectedNodeAddresses {
 			if address != nodeAddresses[i] {
 				t.Errorf("expected Address %v, found %v", address, nodeAddresses[i])
+			}
+		}
+	}
+}
+
+func TestDeleteOfBareMetalHostDeletesMachine(t *testing.T) {
+	scheme := runtime.NewScheme()
+	clusterapis.AddToScheme(scheme)
+	bmoapis.AddToScheme(scheme)
+
+	testCases := []struct {
+		CaseName              string
+		Host                  *bmh.BareMetalHost
+		Machine               *machinev1.Machine
+		ExpectedMachineExists bool
+		ExpectedConsumerRef   *corev1.ObjectReference
+		ExpectedLabels        map[string]string
+		ExpectedAnnotations   map[string]string
+	}{
+		{
+			CaseName: "machine should not be deleted",
+			Host: &bmh.BareMetalHost{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "myhost1",
+					Namespace: "myns",
+				},
+				Spec: bmh.BareMetalHostSpec{
+					ConsumerRef: &corev1.ObjectReference{
+						Name:       "mymachine1",
+						Namespace:  "myns",
+						Kind:       "Machine",
+						APIVersion: machinev1.SchemeGroupVersion.String(),
+					},
+				},
+				Status: bmh.BareMetalHostStatus{
+					HardwareProfile: "dell",
+					Provisioning: bmh.ProvisionStatus{
+						State: "ready",
+					},
+				},
+			},
+			Machine: &machinev1.Machine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mymachine1",
+					Namespace: "myns",
+					Annotations: map[string]string{
+						HostAnnotation: "myns/myhost1",
+					},
+				},
+				Status: machinev1.MachineStatus{},
+			},
+			ExpectedMachineExists: true,
+			ExpectedConsumerRef: &corev1.ObjectReference{
+				Name:       "mymachine1",
+				Namespace:  "myns",
+				Kind:       "Machine",
+				APIVersion: machinev1.SchemeGroupVersion.String(),
+			},
+			ExpectedLabels: map[string]string{
+				InstanceTypeLabel: "dell",
+			},
+			ExpectedAnnotations: map[string]string{
+				InstanceStateAnnotation: "ready",
+				HostAnnotation: "myns/myhost1",
+			},
+		},
+		{
+			CaseName: "machine should be deleted",
+			Host: &bmh.BareMetalHost{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "myhost2",
+					Namespace: "myns",
+				},
+				Spec: bmh.BareMetalHostSpec{
+					ConsumerRef: &corev1.ObjectReference{
+						Name:       "mymachine2",
+						Namespace:  "myns",
+						Kind:       "Machine",
+						APIVersion: machinev1.SchemeGroupVersion.String(),
+					},
+				},
+				Status: bmh.BareMetalHostStatus{
+					HardwareProfile: "dell",
+					Provisioning: bmh.ProvisionStatus{
+						State: "deleting",
+					},
+				},
+			},
+			Machine: &machinev1.Machine{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mymachine2",
+					Namespace: "myns",
+					Annotations: map[string]string{
+						HostAnnotation: "myns/myhost2",
+					},
+				},
+				Status: machinev1.MachineStatus{},
+			},
+			ExpectedMachineExists: false,
+			ExpectedConsumerRef: nil,
+			ExpectedLabels: nil,
+			ExpectedAnnotations: nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		c := fakeclient.NewFakeClientWithScheme(scheme)
+		if tc.Machine != nil {
+			c.Create(context.TODO(), tc.Machine)
+		}
+		if tc.Host != nil {
+			c.Create(context.TODO(), tc.Host)
+		}
+		actuator, err := NewActuator(ActuatorParams{
+			Client: c,
+		})
+		if err != nil {
+			t.Error(err)
+		}
+
+		err = actuator.Update(context.TODO(), nil, tc.Machine)
+		if err != nil {
+			t.Errorf("unexpected error %v", err)
+		}
+
+		if &tc.Machine != nil {
+			key := client.ObjectKey{
+				Name:      tc.Machine.Name,
+				Namespace: tc.Machine.Namespace,
+			}
+			machine := machinev1.Machine{}
+			
+			err = c.Get(context.TODO(), key, &machine)
+			if tc.ExpectedMachineExists == false {
+				if !errors.IsNotFound(err) {
+					t.Errorf("Expected machine to not exist but received error: %v", err)
+				}
+			} else {
+				result, err := actuator.Exists(context.TODO(), nil, tc.Machine)
+				if err != nil {
+					t.Error(err)
+				}
+				if tc.ExpectedMachineExists != result {
+					t.Errorf("ExpectedMachineExists: %v, found %v", tc.ExpectedMachineExists, result)
+				}
+			}
+
+			if reflect.DeepEqual(tc.ExpectedAnnotations, machine.ObjectMeta.Annotations) == false {
+				t.Errorf("expected Machine annotations: %v, found %v", tc.ExpectedAnnotations, machine.ObjectMeta.Annotations)
+			}
+
+			hostKey := client.ObjectKey{
+				Name:      tc.Host.Name,
+				Namespace: tc.Host.Namespace,
+			}
+			host := bmh.BareMetalHost{}
+			c.Get(context.TODO(), hostKey, &host)
+
+			if reflect.DeepEqual(tc.ExpectedConsumerRef, host.Spec.ConsumerRef) == false {
+				t.Errorf("expected Host consumerRef: %v, found %v", tc.ExpectedConsumerRef, host.Spec.ConsumerRef)
 			}
 		}
 	}
