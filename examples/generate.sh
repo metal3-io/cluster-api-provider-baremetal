@@ -108,15 +108,15 @@ echo "Generated ${MACHINEDEPLOYMENT_GENERATED_FILE}"
 curl -L -o "${COMPONENTS_CERT_MANAGER_GENERATED_FILE}" https://github.com/jetstack/cert-manager/releases/download/v0.13.0/cert-manager.yaml
 
 # Generate Cluster API provider components file.
-kustomize build "github.com/kubernetes-sigs/cluster-api/config/default/?ref=master" > "${COMPONENTS_CLUSTER_API_GENERATED_FILE}"
+kustomize build "github.com/kubernetes-sigs/cluster-api/config/?ref=master" > "${COMPONENTS_CLUSTER_API_GENERATED_FILE}"
 echo "Generated ${COMPONENTS_CLUSTER_API_GENERATED_FILE}"
 
 # Generate Kubeadm Bootstrap Provider components file.
-kustomize build "github.com/kubernetes-sigs/cluster-api/bootstrap/kubeadm/config/default/?ref=master" > "${COMPONENTS_KUBEADM_GENERATED_FILE}"
+kustomize build "github.com/kubernetes-sigs/cluster-api/bootstrap/kubeadm/config/?ref=master" > "${COMPONENTS_KUBEADM_GENERATED_FILE}"
 echo "Generated ${COMPONENTS_KUBEADM_GENERATED_FILE}"
 
 # Generate Kubeadm Controlplane components file.
-kustomize build "github.com/kubernetes-sigs/cluster-api/controlplane/kubeadm/config/default/?ref=master" > "${COMPONENTS_CTRLPLANE_GENERATED_FILE}"
+kustomize build "github.com/kubernetes-sigs/cluster-api/controlplane/kubeadm/config/?ref=master" > "${COMPONENTS_CTRLPLANE_GENERATED_FILE}"
 echo "Generated ${COMPONENTS_CTRLPLANE_GENERATED_FILE}"
 
 # Generate BAREMETAL Infrastructure Provider components file.
