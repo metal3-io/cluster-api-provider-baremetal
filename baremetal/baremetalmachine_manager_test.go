@@ -1195,6 +1195,17 @@ var _ = Describe("BareMetalMachine manager", func() {
 			Secret:              newSecret(),
 			ExpectSecretDeleted: true,
 		}),
+		Entry("Consumer ref should be removed", testCaseDelete{
+			Host: newBareMetalHost("myhost", bmhSpecNoImg(), bmh.StateAvailable,
+				bmhStatus(), false, false,
+			),
+			Machine: newMachine("mymachine", "", nil),
+			BMMachine: newBareMetalMachine("mybmmachine", nil, bmmSecret(), nil,
+				bmmObjectMetaWithValidAnnotations(),
+			),
+			Secret:              newSecret(),
+			ExpectSecretDeleted: true,
+		}),
 		Entry("Consumer ref does not match, so it should not be removed",
 			testCaseDelete{
 				Host: newBareMetalHost("myhost", bmhSpecSomeImg(),

@@ -15,7 +15,7 @@ require (
 	github.com/gophercloud/gophercloud v0.3.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/mdempsky/maligned v0.0.0-20180708014732-6e39bd26a8c8 // indirect
-	github.com/metal3-io/baremetal-operator v0.0.0-20200207092945-ce276d44ddec
+	github.com/metal3-io/baremetal-operator v0.0.0-20200219190700-ab6db428b878
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
 	github.com/pkg/errors v0.9.1

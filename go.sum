@@ -347,6 +347,10 @@ github.com/metal3-io/baremetal-operator v0.0.0-20200116072141-3d7a06eb80b9 h1:mV
 github.com/metal3-io/baremetal-operator v0.0.0-20200116072141-3d7a06eb80b9/go.mod h1:o9ta8R2EEtSiQY53sXdoM50v5531G0oS+lC58Gcm+1Y=
 github.com/metal3-io/baremetal-operator v0.0.0-20200207092945-ce276d44ddec h1:cbGYTPHWO5ErkHIPCV9clnHixp43nzeOj8KEU9E2GXU=
 github.com/metal3-io/baremetal-operator v0.0.0-20200207092945-ce276d44ddec/go.mod h1:o9ta8R2EEtSiQY53sXdoM50v5531G0oS+lC58Gcm+1Y=
+github.com/metal3-io/baremetal-operator v0.0.0-20200218103159-f32e58b41c62 h1:zYAk2qlKkBj/ZTa9hq+TEayv0TNsjPABpoZfG0JKapU=
+github.com/metal3-io/baremetal-operator v0.0.0-20200218103159-f32e58b41c62/go.mod h1:o9ta8R2EEtSiQY53sXdoM50v5531G0oS+lC58Gcm+1Y=
+github.com/metal3-io/baremetal-operator v0.0.0-20200219190700-ab6db428b878 h1:8K8O0gQ0CxCu5af+QK8gohYRij5jiJjLyrS8XNVA2Ds=
+github.com/metal3-io/baremetal-operator v0.0.0-20200219190700-ab6db428b878/go.mod h1:o9ta8R2EEtSiQY53sXdoM50v5531G0oS+lC58Gcm+1Y=
 github.com/mitchellh/go-homedir v1.1.0/go.mod h1:SfyaCUpYCn1Vlf4IUYiD9fPX4A5wJrkLzIz1N1q0pr0=
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
