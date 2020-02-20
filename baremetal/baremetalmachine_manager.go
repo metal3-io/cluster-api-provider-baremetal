@@ -38,10 +38,10 @@ import (
 	"k8s.io/utils/pointer"
 
 	bmh "github.com/metal3-io/baremetal-operator/pkg/apis/metal3/v1alpha1"
+	capbm "github.com/metal3-io/cluster-api-provider-baremetal/api/v1alpha2"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	clientcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	capbm "github.com/metal3-io/cluster-api-provider-baremetal/api/v1alpha2"
 	capi "sigs.k8s.io/cluster-api/api/v1alpha2"
 	capierrors "sigs.k8s.io/cluster-api/errors"
 	"sigs.k8s.io/cluster-api/util"
@@ -339,7 +339,7 @@ func (m *MachineManager) Delete(ctx context.Context) error {
 		// TODO? remove empty string that is the status without BMO running
 		case bmh.StateRegistrationError, bmh.StateRegistering,
 			bmh.StateMatchProfile, bmh.StateInspecting,
-			bmh.StateReady, bmh.StateValidationError, bmh.StateNone:
+			bmh.StateReady, bmh.StateNone:
 			// Host is not provisioned
 			waiting = false
 		case bmh.StateExternallyProvisioned:

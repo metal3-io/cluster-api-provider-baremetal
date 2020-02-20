@@ -3,31 +3,44 @@ module github.com/metal3-io/cluster-api-provider-baremetal
 go 1.13
 
 require (
+	cloud.google.com/go v0.53.0 // indirect
+	github.com/coreos/etcd v3.3.15+incompatible // indirect
+	github.com/emicklei/go-restful v2.11.2+incompatible // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1 // indirect
-	github.com/gogo/protobuf v1.3.0 // indirect
-	github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6 // indirect
-	github.com/golang/mock v1.3.1
-	github.com/metal3-io/baremetal-operator v0.0.0-20191004200613-f048f3bc5f05
-	github.com/onsi/ginkgo v1.10.1
-	github.com/onsi/gomega v1.7.0
-	github.com/pkg/errors v0.8.1
-	github.com/prometheus/common v0.6.0 // indirect
-	github.com/prometheus/procfs v0.0.3 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/go-openapi/spec v0.19.6 // indirect
+	github.com/go-openapi/swag v0.19.7 // indirect
+	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/golang/mock v1.4.0
+	github.com/google/gofuzz v1.1.0 // indirect
+	github.com/googleapis/gnostic v0.4.1 // indirect
+	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/imdario/mergo v0.3.8 // indirect
+	github.com/mailru/easyjson v0.7.1 // indirect
+	github.com/metal3-io/baremetal-operator v0.0.0-20200219190700-ab6db428b878
+	github.com/onsi/ginkgo v1.11.0
+	github.com/onsi/gomega v1.8.1
+	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.4.1 // indirect
+	github.com/prometheus/procfs v0.0.10 // indirect
 	go.uber.org/atomic v1.4.0 // indirect
-	go.uber.org/zap v1.10.0 // indirect
-	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
-	golang.org/x/lint v0.0.0-20190930215403-16217165b5de // indirect
-	golang.org/x/net v0.0.0-20190812203447-cdfb69ac37fc
-	golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 // indirect
-	golang.org/x/tools v0.0.0-20191017101817-846f856e7d71 // indirect
-	google.golang.org/appengine v1.6.1 // indirect
-	k8s.io/api v0.0.0-20191016110408-35e52d86657a
-	k8s.io/apimachinery v0.0.0-20191004115801-a2eda9f80ab8
-	k8s.io/client-go v0.0.0-20191016111102-bec269661e48
+	golang.org/x/crypto v0.0.0-20200219234226-1ad67e1f0ef4 // indirect
+	golang.org/x/net v0.0.0-20200219183655-46282727080f
+	golang.org/x/sys v0.0.0-20200219091948-cb0a6d8edb6c // indirect
+	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
+	k8s.io/api v0.17.3
+	k8s.io/apiextensions-apiserver v0.17.3 // indirect
+	k8s.io/apimachinery v0.17.3
+	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/klog v1.0.0
-	k8s.io/utils v0.0.0-20190809000727-6c36bc71fc4a
-	sigs.k8s.io/cluster-api v0.2.7
-	sigs.k8s.io/controller-runtime v0.3.1-0.20191029211253-40070e2a1958
+	k8s.io/kube-openapi v0.0.0-20200204173128-addea2498afe // indirect
+	k8s.io/utils v0.0.0-20200124190032-861946025e34
+	sigs.k8s.io/cluster-api v0.2.10
+	sigs.k8s.io/controller-runtime v0.5.0
+	sigs.k8s.io/yaml v1.2.0 // indirect
+)
+
+replace (
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.0
+	k8s.io/client-go => k8s.io/client-go v0.17.3
 )
