@@ -3,6 +3,8 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.5
   creationTimestamp: null
   name: baremetalmachines.infrastructure.cluster.x-k8s.io
 spec:
@@ -28,10 +30,13 @@ spec:
     categories:
     - cluster-api
     kind: BareMetalMachine
+    listKind: BareMetalMachineList
     plural: baremetalmachines
     shortNames:
     - bmm
     - bmmachine
+    singular: baremetalmachine
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}
