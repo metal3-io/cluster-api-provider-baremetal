@@ -6,22 +6,22 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
   creationTimestamp: null
-  name: baremetalmachinetemplates.infrastructure.cluster.x-k8s.io
+  name: metal3machinetemplates.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
   names:
     categories:
     - cluster-api
-    kind: BareMetalMachineTemplate
-    listKind: BareMetalMachineTemplateList
-    plural: baremetalmachinetemplates
-    singular: baremetalmachinetemplate
+    kind: Metal3MachineTemplate
+    listKind: Metal3MachineTemplateList
+    plural: metal3machinetemplates
+    singular: metal3machinetemplate
   scope: Namespaced
   versions:
   - name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: BareMetalMachineTemplate is the Schema for the baremetalmachinetemplates
+        description: Metal3MachineTemplate is the Schema for the metal3machinetemplates
           API
         properties:
           apiVersion:
@@ -37,12 +37,12 @@ spec:
           metadata:
             type: object
           spec:
-            description: BareMetalMachineTemplateSpec defines the desired state of
-              BareMetalMachineTemplate
+            description: Metal3MachineTemplateSpec defines the desired state of
+              Metal3MachineTemplate
             properties:
               template:
-                description: BareMetalMachineTemplateResource describes the data needed
-                  to create a BareMetalMachine from a template
+                description: Metal3MachineTemplateResource describes the data needed
+                  to create a Metal3Machine from a template
                 properties:
                   spec:
                     description: Spec is the specification of the desired behavior
@@ -51,7 +51,7 @@ spec:
                       hostSelector:
                         description: HostSelector specifies matching criteria for
                           labels on BareMetalHosts. This is used to limit the set
-                          of BareMetalHost objects considered for claiming for a BaremetalMachine.
+                          of BareMetalHost objects considered for claiming for a metal3machine.
                         properties:
                           matchExpressions:
                             description: Label match expressions that must be true
@@ -98,13 +98,13 @@ spec:
                         - url
                         type: object
                       providerID:
-                        description: ProviderID will be the baremetal machine in ProviderID
+                        description: ProviderID will be the Metal3 machine in ProviderID
                           format (baremetal:////<machinename>)
                         type: string
                       userData:
                         description: UserData references the Secret that holds user
                           data needed by the bare metal operator. The Namespace is
-                          optional; it will default to the BaremetalMachine's namespace
+                          optional; it will default to the metal3machine's namespace
                           if not specified.
                         properties:
                           name:
@@ -131,7 +131,7 @@ spec:
   - name: v1alpha3
     schema:
       openAPIV3Schema:
-        description: BareMetalMachineTemplate is the Schema for the baremetalmachinetemplates
+        description: Metal3MachineTemplate is the Schema for the metal3machinetemplates
           API
         properties:
           apiVersion:
@@ -147,12 +147,12 @@ spec:
           metadata:
             type: object
           spec:
-            description: BareMetalMachineTemplateSpec defines the desired state of
-              BareMetalMachineTemplate
+            description: Metal3MachineTemplateSpec defines the desired state of
+              Metal3MachineTemplate
             properties:
               template:
-                description: BareMetalMachineTemplateResource describes the data needed
-                  to create a BareMetalMachine from a template
+                description: Metal3MachineTemplateResource describes the data needed
+                  to create a Metal3Machine from a template
                 properties:
                   spec:
                     description: Spec is the specification of the desired behavior
@@ -161,7 +161,7 @@ spec:
                       hostSelector:
                         description: HostSelector specifies matching criteria for
                           labels on BareMetalHosts. This is used to limit the set
-                          of BareMetalHost objects considered for claiming for a BaremetalMachine.
+                          of BareMetalHost objects considered for claiming for a metal3machine.
                         properties:
                           matchExpressions:
                             description: Label match expressions that must be true
@@ -207,13 +207,13 @@ spec:
                         - url
                         type: object
                       providerID:
-                        description: ProviderID will be the baremetal machine in ProviderID
+                        description: ProviderID will be the Metal3 machine in ProviderID
                           format (baremetal:////<machinename>)
                         type: string
                       userData:
                         description: UserData references the Secret that holds user
                           data needed by the bare metal operator. The Namespace is
-                          optional; it will default to the BaremetalMachine's namespace
+                          optional; it will default to the metal3machine's namespace
                           if not specified.
                         properties:
                           name:

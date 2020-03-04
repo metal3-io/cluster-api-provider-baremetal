@@ -6,19 +6,19 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
   creationTimestamp: null
-  name: baremetalmachines.infrastructure.cluster.x-k8s.io
+  name: metal3machines.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
   names:
     categories:
     - cluster-api
-    kind: BareMetalMachine
-    listKind: BareMetalMachineList
-    plural: baremetalmachines
+    kind: Metal3Machine
+    listKind: Metal3MachineList
+    plural: metal3machines
     shortNames:
     - bmm
     - bmmachine
-    singular: baremetalmachine
+    singular: metal3machine
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -30,7 +30,7 @@ spec:
       jsonPath: .status.phase
       name: Phase
       type: string
-    - description: BaremetalMachine is Ready
+    - description: metal3machine is Ready
       jsonPath: .status.ready
       name: Ready
       type: string
@@ -41,7 +41,7 @@ spec:
     name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: BareMetalMachine is the Schema for the baremetalmachines API
+        description: Metal3Machine is the Schema for the metal3machines API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -56,12 +56,12 @@ spec:
           metadata:
             type: object
           spec:
-            description: BareMetalMachineSpec defines the desired state of BareMetalMachine
+            description: Metal3MachineSpec defines the desired state of Metal3Machine
             properties:
               hostSelector:
                 description: HostSelector specifies matching criteria for labels on
                   BareMetalHosts. This is used to limit the set of BareMetalHost objects
-                  considered for claiming for a BaremetalMachine.
+                  considered for claiming for a metal3machine.
                 properties:
                   matchExpressions:
                     description: Label match expressions that must be true on a chosen
@@ -107,13 +107,13 @@ spec:
                 - url
                 type: object
               providerID:
-                description: ProviderID will be the baremetal machine in ProviderID
+                description: ProviderID will be the Metal3 machine in ProviderID
                   format (baremetal:////<machinename>)
                 type: string
               userData:
                 description: UserData references the Secret that holds user data needed
                   by the bare metal operator. The Namespace is optional; it will default
-                  to the BaremetalMachine's namespace if not specified.
+                  to the metal3machine's namespace if not specified.
                 properties:
                   name:
                     description: Name is unique within a namespace to reference a
@@ -128,7 +128,7 @@ spec:
             - image
             type: object
           status:
-            description: BareMetalMachineStatus defines the observed state of BareMetalMachine
+            description: Metal3MachineStatus defines the observed state of Metal3Machine
             properties:
               addresses:
                 description: Addresses is a list of addresses assigned to the machine.
@@ -151,34 +151,34 @@ spec:
                 type: array
               errorMessage:
                 description: "ErrorMessage will be set in the event that there is
-                  a terminal problem reconciling the BaremetalMachine and will contain
+                  a terminal problem reconciling the metal3machine and will contain
                   a more verbose string suitable for logging and human consumption.
                   \n This field should not be set for transitive errors that a controller
                   faces that are expected to be fixed automatically over time (like
                   service outages), but instead indicate that something is fundamentally
-                  wrong with the BaremetalMachine's spec or the configuration of the
+                  wrong with the metal3machine's spec or the configuration of the
                   controller, and that manual intervention is required. Examples of
                   terminal errors would be invalid combinations of settings in the
                   spec, values that are unsupported by the controller, or the responsible
                   controller itself being critically misconfigured. \n Any transient
-                  errors that occur during the reconciliation of BaremetalMachines
-                  can be added as events to the BaremetalMachine object and/or logged
+                  errors that occur during the reconciliation of metal3machines
+                  can be added as events to the metal3machine object and/or logged
                   in the controller's output."
                 type: string
               errorReason:
                 description: "ErrorReason will be set in the event that there is a
-                  terminal problem reconciling the BaremetalMachine and will contain
+                  terminal problem reconciling the metal3machine and will contain
                   a succinct value suitable for machine interpretation. \n This field
                   should not be set for transitive errors that a controller faces
                   that are expected to be fixed automatically over time (like service
                   outages), but instead indicate that something is fundamentally wrong
-                  with the BaremetalMachine's spec or the configuration of the controller,
+                  with the metal3machine's spec or the configuration of the controller,
                   and that manual intervention is required. Examples of terminal errors
                   would be invalid combinations of settings in the spec, values that
                   are unsupported by the controller, or the responsible controller
                   itself being critically misconfigured. \n Any transient errors that
-                  occur during the reconciliation of BaremetalMachines can be added
-                  as events to the BaremetalMachine object and/or logged in the controller's
+                  occur during the reconciliation of metal3machines can be added
+                  as events to the metal3machine object and/or logged in the controller's
                   output."
                 type: string
               lastUpdated:
@@ -206,7 +206,7 @@ spec:
       jsonPath: .spec.providerID
       name: ProviderID
       type: string
-    - description: BaremetalMachine is Ready
+    - description: metal3machine is Ready
       jsonPath: .status.ready
       name: Ready
       type: string
@@ -214,14 +214,14 @@ spec:
       jsonPath: .metadata.labels.cluster\.x-k8s\.io/cluster-name
       name: Cluster
       type: string
-    - description: BaremetalMachine current phase
+    - description: metal3machine current phase
       jsonPath: .status.phase
       name: Phase
       type: string
     name: v1alpha3
     schema:
       openAPIV3Schema:
-        description: BareMetalMachine is the Schema for the baremetalmachines API
+        description: Metal3Machine is the Schema for the metal3machines API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -236,12 +236,12 @@ spec:
           metadata:
             type: object
           spec:
-            description: BareMetalMachineSpec defines the desired state of BareMetalMachine
+            description: Metal3MachineSpec defines the desired state of Metal3Machine
             properties:
               hostSelector:
                 description: HostSelector specifies matching criteria for labels on
                   BareMetalHosts. This is used to limit the set of BareMetalHost objects
-                  considered for claiming for a BaremetalMachine.
+                  considered for claiming for a metal3machine.
                 properties:
                   matchExpressions:
                     description: Label match expressions that must be true on a chosen
@@ -286,13 +286,13 @@ spec:
                 - url
                 type: object
               providerID:
-                description: ProviderID will be the baremetal machine in ProviderID
+                description: ProviderID will be the Metal3 machine in ProviderID
                   format (baremetal:////<machinename>)
                 type: string
               userData:
                 description: UserData references the Secret that holds user data needed
                   by the bare metal operator. The Namespace is optional; it will default
-                  to the BaremetalMachine's namespace if not specified.
+                  to the metal3machine's namespace if not specified.
                 properties:
                   name:
                     description: Name is unique within a namespace to reference a
@@ -307,7 +307,7 @@ spec:
             - image
             type: object
           status:
-            description: BareMetalMachineStatus defines the observed state of BareMetalMachine
+            description: Metal3MachineStatus defines the observed state of Metal3Machine
             properties:
               addresses:
                 description: Addresses is a list of addresses assigned to the machine.
@@ -330,34 +330,34 @@ spec:
                 type: array
               failureMessage:
                 description: "FailureMessage will be set in the event that there is
-                  a terminal problem reconciling the BaremetalMachine and will contain
+                  a terminal problem reconciling the metal3machine and will contain
                   a more verbose string suitable for logging and human consumption.
                   \n This field should not be set for transitive errors that a controller
                   faces that are expected to be fixed automatically over time (like
                   service outages), but instead indicate that something is fundamentally
-                  wrong with the BaremetalMachine's spec or the configuration of the
+                  wrong with the metal3machine's spec or the configuration of the
                   controller, and that manual intervention is required. Examples of
                   terminal errors would be invalid combinations of settings in the
                   spec, values that are unsupported by the controller, or the responsible
                   controller itself being critically misconfigured. \n Any transient
-                  errors that occur during the reconciliation of BaremetalMachines
-                  can be added as events to the BaremetalMachine object and/or logged
+                  errors that occur during the reconciliation of metal3machines
+                  can be added as events to the metal3machine object and/or logged
                   in the controller's output."
                 type: string
               failureReason:
                 description: "FailureReason will be set in the event that there is
-                  a terminal problem reconciling the BaremetalMachine and will contain
+                  a terminal problem reconciling the metal3machine and will contain
                   a succinct value suitable for machine interpretation. \n This field
                   should not be set for transitive errors that a controller faces
                   that are expected to be fixed automatically over time (like service
                   outages), but instead indicate that something is fundamentally wrong
-                  with the BaremetalMachine's spec or the configuration of the controller,
+                  with the metal3machine's spec or the configuration of the controller,
                   and that manual intervention is required. Examples of terminal errors
                   would be invalid combinations of settings in the spec, values that
                   are unsupported by the controller, or the responsible controller
                   itself being critically misconfigured. \n Any transient errors that
-                  occur during the reconciliation of BaremetalMachines can be added
-                  as events to the BaremetalMachine object and/or logged in the controller's
+                  occur during the reconciliation of metal3machines can be added
+                  as events to the metal3machine object and/or logged in the controller's
                   output."
                 type: string
               lastUpdated:

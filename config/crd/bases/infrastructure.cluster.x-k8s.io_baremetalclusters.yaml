@@ -6,23 +6,23 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
   creationTimestamp: null
-  name: baremetalclusters.infrastructure.cluster.x-k8s.io
+  name: metal3clusters.infrastructure.cluster.x-k8s.io
 spec:
   group: infrastructure.cluster.x-k8s.io
   names:
     categories:
     - cluster-api
-    kind: BareMetalCluster
-    listKind: BareMetalClusterList
-    plural: baremetalclusters
+    kind: Metal3Cluster
+    listKind: Metal3ClusterList
+    plural: metal3clusters
     shortNames:
     - bmc
     - bmcluster
-    singular: baremetalcluster
+    singular: metal3cluster
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - description: BaremetalCluster is Ready
+    - description: metal3Cluster is Ready
       jsonPath: .status.ready
       name: Ready
       type: string
@@ -37,7 +37,7 @@ spec:
     name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: BareMetalCluster is the Schema for the baremetalclusters API
+        description: Metal3Cluster is the Schema for the metal3clusters API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -52,7 +52,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: BareMetalClusterSpec defines the desired state of BareMetalCluster.
+            description: Metal3ClusterSpec defines the desired state of Metal3Cluster.
             properties:
               apiEndpoint:
                 type: string
@@ -62,7 +62,7 @@ spec:
             - apiEndpoint
             type: object
           status:
-            description: BareMetalClusterStatus defines the observed state of BareMetalCluster.
+            description: Metal3ClusterStatus defines the observed state of Metal3Cluster.
             properties:
               apiEndpoints:
                 description: APIEndpoints represents the endpoints to communicate
@@ -84,34 +84,34 @@ spec:
                 type: array
               errorMessage:
                 description: "ErrorMessage will be set in the event that there is
-                  a terminal problem reconciling the BaremetalMachine and will contain
+                  a terminal problem reconciling the metal3machine and will contain
                   a more verbose string suitable for logging and human consumption.
                   \n This field should not be set for transitive errors that a controller
                   faces that are expected to be fixed automatically over time (like
                   service outages), but instead indicate that something is fundamentally
-                  wrong with the BaremetalMachine's spec or the configuration of the
+                  wrong with the metal3machine's spec or the configuration of the
                   controller, and that manual intervention is required. Examples of
                   terminal errors would be invalid combinations of settings in the
                   spec, values that are unsupported by the controller, or the responsible
                   controller itself being critically misconfigured. \n Any transient
                   errors that occur during the reconciliation of Machines can be added
-                  as events to the BaremetalMachine object and/or logged in the controller's
+                  as events to the metal3machine object and/or logged in the controller's
                   output."
                 type: string
               errorReason:
                 description: "ErrorReason will be set in the event that there is a
-                  terminal problem reconciling the BaremetalMachine and will contain
+                  terminal problem reconciling the metal3machine and will contain
                   a succinct value suitable for machine interpretation. \n This field
                   should not be set for transitive errors that a controller faces
                   that are expected to be fixed automatically over time (like service
                   outages), but instead indicate that something is fundamentally wrong
-                  with the BaremetalMachine's spec or the configuration of the controller,
+                  with the metal3machine's spec or the configuration of the controller,
                   and that manual intervention is required. Examples of terminal errors
                   would be invalid combinations of settings in the spec, values that
                   are unsupported by the controller, or the responsible controller
                   itself being critically misconfigured. \n Any transient errors that
                   occur during the reconciliation of Machines can be added as events
-                  to the BaremetalMachine object and/or logged in the controller's
+                  to the metal3machine object and/or logged in the controller's
                   output."
                 type: string
               lastUpdated:
@@ -119,10 +119,10 @@ spec:
                 format: date-time
                 type: string
               ready:
-                description: Ready denotes that the baremetal cluster (infrastructure)
+                description: Ready denotes that the Metal3 cluster (infrastructure)
                   is ready. In Baremetal case, it does not mean anything for now as
                   no infrastructure steps need to be performed. Required by Cluster
-                  API. Set to True by the BaremetalCluster controller after creation.
+                  API. Set to True by the metal3Cluster controller after creation.
                 type: boolean
             required:
             - ready
@@ -133,7 +133,7 @@ spec:
     subresources:
       status: {}
   - additionalPrinterColumns:
-    - description: BaremetalCluster is Ready
+    - description: metal3Cluster is Ready
       jsonPath: .status.ready
       name: Ready
       type: string
@@ -152,7 +152,7 @@ spec:
     name: v1alpha3
     schema:
       openAPIV3Schema:
-        description: BareMetalCluster is the Schema for the baremetalclusters API
+        description: Metal3Cluster is the Schema for the metal3clusters API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -167,7 +167,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: BareMetalClusterSpec defines the desired state of BareMetalCluster.
+            description: Metal3ClusterSpec defines the desired state of Metal3Cluster.
             properties:
               controlPlaneEndpoint:
                 description: ControlPlaneEndpoint represents the endpoint used to
@@ -189,7 +189,7 @@ spec:
             - controlPlaneEndpoint
             type: object
           status:
-            description: BareMetalClusterStatus defines the observed state of BareMetalCluster.
+            description: Metal3ClusterStatus defines the observed state of Metal3Cluster.
             properties:
               failureMessage:
                 description: FailureMessage indicates that there is a fatal problem
@@ -205,10 +205,10 @@ spec:
                 format: date-time
                 type: string
               ready:
-                description: Ready denotes that the baremetal cluster (infrastructure)
+                description: Ready denotes that the Metal3 cluster (infrastructure)
                   is ready. In Baremetal case, it does not mean anything for now as
                   no infrastructure steps need to be performed. Required by Cluster
-                  API. Set to True by the BaremetalCluster controller after creation.
+                  API. Set to True by the metal3Cluster controller after creation.
                 type: boolean
             required:
             - ready

@@ -16,9 +16,9 @@ limitations under the License.
 
 package v1alpha3
 
-func (*BareMetalCluster) Hub()             {}
-func (*BareMetalClusterList) Hub()         {}
-func (*BareMetalMachine) Hub()             {}
-func (*BareMetalMachineList) Hub()         {}
-func (*BareMetalMachineTemplate) Hub()     {}
-func (*BareMetalMachineTemplateList) Hub() {}
+func (*Metal3Cluster) Hub()             {}
+func (*Metal3ClusterList) Hub()         {}
+func (*Metal3Machine) Hub()             {}
+func (*Metal3MachineList) Hub()         {}
+func (*Metal3MachineTemplate) Hub()     {}
+func (*Metal3MachineTemplateList) Hub() {}
